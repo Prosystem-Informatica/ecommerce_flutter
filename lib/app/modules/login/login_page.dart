@@ -14,7 +14,7 @@ class LoginPage extends StatefulWidget {
   State<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> with Messages<LoginPage>{
+class _LoginPageState extends State<LoginPage> with Messages<LoginPage> {
   final TextEditingController servidorController = TextEditingController();
   final TextEditingController loginController = TextEditingController();
   final TextEditingController senhaController = TextEditingController();
@@ -47,6 +47,7 @@ class _LoginPageState extends State<LoginPage> with Messages<LoginPage>{
           },
         );
       },
+
       builder: (context, state) {
         return Scaffold(
           appBar: AppBar(),

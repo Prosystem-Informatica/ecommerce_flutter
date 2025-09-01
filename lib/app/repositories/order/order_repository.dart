@@ -11,9 +11,7 @@ import 'model/product_model.dart';
 class OrderRepository implements IOrderRepository {
   final RestClient _rest;
   late SharedPreferences prefs;
-  OrderRepository({
-    required RestClient rest,
-  }) : _rest = rest;
+  OrderRepository({required RestClient rest}) : _rest = rest;
 
   @override
   Future<List<ProductModel>> getProducts() async {
@@ -24,18 +22,15 @@ class OrderRepository implements IOrderRepository {
 
       print("Host > ${host}");
 
-      var url = 'http://prosystem.dyndns-work.com:9010/datasnap/rest/TServerAPPecf/PesquisaProd/';
-      var response = await http.get(Uri.parse(url), headers: {
-        'Accept': '*/*',
-        'Accept-Encoding': 'gzip, deflate, br',
-        'Connection': 'keep-alive',
-      },).timeout(const Duration(seconds: 20));
+      var url = '/datasnap/rest/TServerAPPecf/PesquisaProd/';
+      var response = await _rest.get(url);
+      print("RES DATA > ${response.data}");
 
-      var jsonData = jsonDecode(response.body);
+      var jsonData = jsonDecode(response.data);
       print("Json > ${jsonData}");
 
       if (response.statusCode == 200) {
-        print("Resposta: ${response.body}");
+        print("Resposta: ${response.data}");
       } else {
         print("Erro: ${response.statusCode}");
       }

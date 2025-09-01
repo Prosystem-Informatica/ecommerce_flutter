@@ -10,9 +10,7 @@ import 'i_login_repository.dart';
 class LoginRepository implements ILoginRepository {
   final RestClient _rest;
   late SharedPreferences prefs;
-  LoginRepository({
-    required RestClient rest,
-  }) : _rest = rest;
+  LoginRepository({required RestClient rest}) : _rest = rest;
 
   @override
   Future<void> checkUrl() async {
@@ -21,13 +19,19 @@ class LoginRepository implements ILoginRepository {
 
       var url =
           'http://prosystem.dyndns-work.com:9090/datasnap/rest/TserverAPPnfe/LoginEmpresa/10329033000133';
-      var response = await http.get(Uri.parse(url));
+      var response = await _rest.get(url);
 
-      var jsonData = jsonDecode(response.body);
+      var jsonData = jsonDecode(response.data);
       print("Json > ${jsonData}");
 
-      await prefs.setString('host', jsonData[0]['SERVIDOR'].toString().toLowerCase());
-      await prefs.setString('port', jsonData[0]['PORTA'].toString().toLowerCase());
+      await prefs.setString(
+        'host',
+        jsonData[0]['SERVIDOR'].toString().toLowerCase(),
+      );
+      await prefs.setString(
+        'port',
+        jsonData[0]['PORTA'].toString().toLowerCase(),
+      );
 
       return;
     } catch (e) {
@@ -45,7 +49,8 @@ class LoginRepository implements ILoginRepository {
 
       print("Host > ${host}");
 
-      var url = '$host:$port/datasnap/rest/TServerAPPecf/LoginApp/$login/$password';
+      var url =
+          '$host:$port/datasnap/rest/TServerAPPecf/LoginApp/$login/$password';
       var response = await http.get(Uri.parse(url));
 
       var jsonData = jsonDecode(response.body);
