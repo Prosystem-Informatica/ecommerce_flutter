@@ -4,10 +4,13 @@ import 'package:ecommerce/app/modules/profile/modules/customer/customer_page.dar
 import 'package:ecommerce/app/modules/profile/modules/orders_finish/orders_finish_page.dart';
 import 'package:ecommerce/app/modules/profile/modules/orders_open/orders_open_page.dart';
 import 'package:get/get.dart';
+
 import 'modules/login/login_page.dart';
+import 'modules/splash_page.dart';
 
 class Routes {
-  static const INITIAL = "/login";
+  static const INITIAL = "/splash";
+  static const LOGIN = "/login";
   static const HOME = "/home";
   static const ORDERS_OPEN = "/orders_open";
   static const ORDERS_FINISH = "/orders_finish";
@@ -17,7 +20,8 @@ class Routes {
 
 class AppPages {
   static final pages = [
-    GetPage(name: Routes.INITIAL, page: () => const LoginPage()),
+    GetPage(name: Routes.INITIAL, page: () => const SplashPage()),
+    GetPage(name: Routes.LOGIN, page: () => const LoginPage()),
     GetPage(name: Routes.HOME, page: () => const HomePage()),
     GetPage(name: Routes.ORDERS_OPEN, page: () => const OrdersOpenPage()),
     GetPage(name: Routes.ORDERS_FINISH, page: () => const OrdersFinishPage()),

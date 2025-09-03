@@ -26,11 +26,8 @@ class LoginBlocCubit extends Cubit<LoginBlocState> {
     try {
       emit(state.copyWith(status: LoginStateStatus.loading));
       final loginValidation = await loginRepository.login(login, password);
-
-      if (loginValidation.validado != null &&
-          login != "Lucas" &&
-          password != " ") {
-        emit(state.copyWith(status: LoginStateStatus.lucas));
+      if (loginValidation.validado == 'T' && login != "" && password != "") {
+        emit(state.copyWith(status: LoginStateStatus.success));
       } else {
         emit(
           state.copyWith(

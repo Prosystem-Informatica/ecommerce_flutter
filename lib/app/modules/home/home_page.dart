@@ -3,6 +3,7 @@ import 'package:ecommerce/app/modules/profile/modules/orders_open/orders_open_pa
 import 'package:ecommerce/app/modules/profile/modules/orders_wait/orders_wait_page.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../profile/profile_page.dart';
 
@@ -23,9 +24,15 @@ class _HomePageState extends State<HomePage> {
   }
 
   final List<Widget> _children = [
-    Dashboard(),
-    ProfilePage(),
+    const Dashboard(),
+    const ProfilePage(),
   ];
+
+  Future<void> _logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+    Get.offAllNamed("/login");
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,6 +41,12 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: colorScheme.primary,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout, color: Colors.white),
+            onPressed: _logout,
+          )
+        ],
       ),
       backgroundColor: colorScheme.onPrimary,
       floatingActionButton: FloatingActionButton(
@@ -41,14 +54,14 @@ class _HomePageState extends State<HomePage> {
           Get.toNamed("/add_cart");
         },
         backgroundColor: colorScheme.primary,
-        child: Icon(Icons.add, color: Colors.white,),
+        child: const Icon(Icons.add, color: Colors.white),
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: onTabTapped,
         fixedColor: colorScheme.primary,
         backgroundColor: colorScheme.onPrimary,
-        items: [
+        items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard),
             label: 'Dashboard',
@@ -106,9 +119,9 @@ class _DashboardState extends State<Dashboard> {
                 ),
               ),
               const SizedBox(height: 16),
-              Expanded(
+              const Expanded(
                 child: TabBarView(
-                  children: const [
+                  children: [
                     OrdersWaitPage(),
                     OrdersOpenPage(),
                     OrdersFinishPage(),
@@ -122,4 +135,3 @@ class _DashboardState extends State<Dashboard> {
     );
   }
 }
-

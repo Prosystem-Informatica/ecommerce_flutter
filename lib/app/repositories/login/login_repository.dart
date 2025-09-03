@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:developer';
+import 'dart:ffi';
 import 'package:ecommerce/app/repositories/login/model/login_model.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -19,9 +20,9 @@ class LoginRepository implements ILoginRepository {
 
       var url =
           'http://prosystem.dyndns-work.com:9090/datasnap/rest/TserverAPPnfe/LoginEmpresa/10329033000133';
-      var response = await _rest.get(url);
+      var response = await  http.get(Uri.parse(url));
 
-      var jsonData = jsonDecode(response.data);
+      var jsonData = jsonDecode(response.body);
       print("Json > ${jsonData}");
 
       await prefs.setString(
@@ -50,10 +51,13 @@ class LoginRepository implements ILoginRepository {
       print("Host > ${host}");
 
       var url =
-          '$host:$port/datasnap/rest/TServerAPPecf/LoginApp/$login/$password';
-      var response = await http.get(Uri.parse(url));
+          'prosystem04.dynds-work.com/datasnap/rest/TServerAPPecf/LoginApp/$login/$password';
 
-      var jsonData = jsonDecode(response.body);
+       var path = '/datasnap/rest/TServerAPPecf/LoginApp/$login/$password';
+      var response = await _rest.get(path);
+
+
+      var jsonData = response.data;
       print("Json > ${jsonData}");
 
       var res = await LoginModel.fromJson(jsonData[0]);
