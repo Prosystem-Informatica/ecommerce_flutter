@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:developer';
-import 'dart:ffi';
 import 'package:ecommerce/app/repositories/login/model/login_model.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -20,7 +19,7 @@ class LoginRepository implements ILoginRepository {
 
       var url =
           'http://prosystem.dyndns-work.com:9090/datasnap/rest/TserverAPPnfe/LoginEmpresa/10329033000133';
-      var response = await  http.get(Uri.parse(url));
+      var response = await http.get(Uri.parse(url));
 
       var jsonData = jsonDecode(response.body);
       print("Json > ${jsonData}");
@@ -49,18 +48,27 @@ class LoginRepository implements ILoginRepository {
       var port = await prefs.getString("port");
 
       print("Host > ${host}");
+      print("Port > ${port}");
 
-      var url =
-          'prosystem04.dynds-work.com/datasnap/rest/TServerAPPecf/LoginApp/$login/$password';
+      /*var url =
+          'prosystem04.dynds-work.com/datasnap/rest/TServerAPPecf/LoginApp/$login/$password';*/
 
-       var path = '/datasnap/rest/TServerAPPecf/LoginApp/$login/$password';
+      login = login.toUpperCase();
+      password = password.toUpperCase();
+      var path = '/datasnap/rest/TServerAPPecf/LoginApp/$login/$password';
       var response = await _rest.get(path);
 
+      login = login.toUpperCase();
+      password = password.toUpperCase();
 
       var jsonData = response.data;
       print("Json > ${jsonData}");
 
       var res = await LoginModel.fromJson(jsonData[0]);
+
+      if (res.validado == "T") {
+        await prefs.setString('userLogin', login);
+      }
 
       return res;
     } catch (e) {

@@ -16,6 +16,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
+  String? userLogin;
 
   void onTabTapped(int index) {
     setState(() {
@@ -28,25 +29,46 @@ class _HomePageState extends State<HomePage> {
     const ProfilePage(),
   ];
 
-  Future<void> _logout() async {
+  @override
+  void initState() {
+    super.initState();
+    _loadUserLogin();
+  }
+
+  String formatCamelCase(String text){
+    if (text.isEmpty) return text;
+
+    final words = text.split(' ');
+    return words.map((word){
+      if (word.isEmpty) return word;
+      return word[0].toUpperCase() + word.substring(1).toLowerCase();
+    }).join(' ');
+  }
+  Future<void> _loadUserLogin() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
-    Get.offAllNamed("/login");
+    final login = prefs.getString('userLogin');
+
+    setState(() {
+      userLogin = login;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
+
     return Scaffold(
       appBar: AppBar(
+    /*leading: IconButton(
+        icon: const Icon(Icons.arrow_back, color: Colors.white),
+        onPressed: () => Get.back(),
+    ),*/
+        title: Text(
+          userLogin != null ? 'Bem-vindo , ${formatCamelCase(userLogin!)}' : 'Bem-vindo',
+        ), actions: [
+      ],
         backgroundColor: colorScheme.primary,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout, color: Colors.white),
-            onPressed: _logout,
-          )
-        ],
       ),
       backgroundColor: colorScheme.onPrimary,
       floatingActionButton: FloatingActionButton(

@@ -6,7 +6,7 @@ import 'package:ecommerce/app/modules/profile/modules/orders_open/orders_open_pa
 import 'package:get/get.dart';
 
 import 'modules/login/login_page.dart';
-import 'modules/splash_page.dart';
+import 'modules/splash/splash_page.dart';
 
 class Routes {
   static const INITIAL = "/splash";

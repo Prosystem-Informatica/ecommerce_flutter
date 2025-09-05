@@ -43,7 +43,8 @@ class _LoginPageState extends State<LoginPage> with Messages<LoginPage> {
           },
           error: () {
             showError(state.errorMessage ?? "Erro não informado");
-          }, any: () {  },
+          },
+          any: () {},
         );
       },
       builder: (context, state) {
@@ -53,7 +54,10 @@ class _LoginPageState extends State<LoginPage> with Messages<LoginPage> {
           body: SafeArea(
             child: Center(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 30),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 30,
+                ),
                 child: Column(
                   children: [
                     Image.asset("assets/logo-pro.png"),

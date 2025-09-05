@@ -20,9 +20,9 @@ class _SplashPageState extends State<SplashPage> {
     await Future.delayed(const Duration(seconds: 2));
 
     final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString("token");
+    final userLogin = prefs.getString("userLogin");
 
-    if (token != null && token.isNotEmpty) {
+    if (userLogin != null && userLogin.isNotEmpty) {
       Get.offAllNamed("/home");
     } else {
       Get.offAllNamed("/login");

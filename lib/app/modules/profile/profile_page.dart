@@ -95,6 +95,9 @@ class _ProfilePageState extends State<ProfilePage> {
                   leading: Icon(Icons.exit_to_app, color: colorScheme.primary),
                   title: Text("Sair"),
                   onTap: () async {
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.remove('userLogin');
+
                     Get.offAllNamed("/login");
                   },
                 ),
