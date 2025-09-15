@@ -122,12 +122,12 @@ class _DashboardState extends State<Dashboard> {
             children: [
               const SizedBox(height: 8),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 1),
+                padding: const EdgeInsets.symmetric(horizontal: 2),
                 child: Container(
-                  padding: const EdgeInsets.all(1),
+                  padding: const EdgeInsets.all(2),
                   child: TabBar(
                     isScrollable: true,
-                    labelPadding: const EdgeInsets.symmetric(horizontal: 10),
+                    labelPadding: const EdgeInsets.symmetric(horizontal: 25),
                     indicator: BoxDecoration(
                       color: colorScheme.primary,
                       borderRadius: BorderRadius.circular(25),

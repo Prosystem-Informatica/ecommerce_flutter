@@ -105,9 +105,21 @@ class _ProductListPageState extends State<ProductListPage>
                     Expanded(
                       child: TextField(
                         controller: searchController,
-                        decoration: const InputDecoration(
+                        decoration:  InputDecoration(
                           labelText: 'Buscar produtos...',
                           border: OutlineInputBorder(),
+                          suffixIcon:
+                              searchQuery.isNotEmpty
+                                  ? IconButton(
+                                    icon: Icon(Icons.clear),
+                                    onPressed: () {
+                                      setState(() {
+                                        searchController.clear();
+                                        searchQuery = '';
+                                      });
+                                    },
+                                  )
+                                  : null,
                         ),
                         onChanged: (value) {
                           setState(() {
@@ -247,15 +259,19 @@ class _ProductListPageState extends State<ProductListPage>
                   'Produtos',
                   style: TextStyle(color: Colors.white, fontSize: 12),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  '${cart.length}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                const SizedBox(height: 5),
+                Padding(
+                  padding: const EdgeInsets.only(left: 18),
+                  child: Text(
+                    '${cart.length}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
+                const SizedBox(height: 10),
               ],
             ),
             Column(
@@ -266,7 +282,7 @@ class _ProductListPageState extends State<ProductListPage>
                   'Total',
                   style: TextStyle(color: Colors.white, fontSize: 12),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 5),
                 Text(
                   'R\$ ${total.toStringAsFixed(2)}',
                   style: const TextStyle(
@@ -275,6 +291,7 @@ class _ProductListPageState extends State<ProductListPage>
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+                const SizedBox(height: 10),
               ],
             ),
             ElevatedButton(

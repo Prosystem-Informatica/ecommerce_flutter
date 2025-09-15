@@ -29,12 +29,15 @@ class _CustomerPageState extends State<CustomerPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Clientes'),
+        title: const Text('Clientes'),
         actions: [
           IconButton(
-            icon: Icon(Icons.search),
+            icon: const Icon(Icons.search),
             onPressed: () {
-              // Implementar busca
+              showSearch(
+                context: context,
+                delegate: CustomSearchDelegate(customers),
+              );
             },
           ),
         ],
@@ -43,32 +46,96 @@ class _CustomerPageState extends State<CustomerPage> {
         itemCount: customers.length,
         itemBuilder: (context, index) {
           final customer = customers[index];
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  customer['name']!,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  'Código: ${customer['code']}',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                if (index != customers.length - 1) Divider(height: 24),
-              ],
-            ),
-          );
+          return CustomerTile(customer: customer);
         },
       ),
+    );
+  }
+}
+
+class CustomerTile extends StatelessWidget {
+  final Map<String, String> customer;
+  const CustomerTile({super.key, required this.customer});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            customer['name']!,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Código: ${customer['code']}',
+            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+          ),
+          const Divider(height: 24),
+        ],
+      ),
+    );
+  }
+}
+
+class CustomSearchDelegate extends SearchDelegate {
+  final List<Map<String, String>> customers;
+  CustomSearchDelegate(this.customers);
+
+  @override
+  List<Widget>? buildActions(BuildContext context) {
+    return [
+      IconButton(
+        icon: const Icon(Icons.clear),
+        onPressed: () {
+          if (query.isEmpty) {
+            close(context, null);
+          } else {
+            query = '';
+          }
+        },
+      ),
+    ];
+  }
+
+  @override
+  Widget? buildLeading(BuildContext context) {
+    return null;
+  }
+
+  @override
+  Widget buildResults(BuildContext context) {
+    final results =
+        customers.where((c) {
+          final name = c['name']!.toLowerCase();
+          final code = c['code']!;
+          return name.contains(query.toLowerCase()) || code.contains(query);
+        }).toList();
+
+    return ListView.builder(
+      itemCount: results.length,
+      itemBuilder: (context, index) {
+        return CustomerTile(customer: results[index]);
+      },
+    );
+  }
+
+  @override
+  Widget buildSuggestions(BuildContext context) {
+    final suggestions =
+        customers.where((c) {
+          final name = c['name']!.toLowerCase();
+          final code = c['code']!;
+          return name.contains(query.toLowerCase()) || code.contains(query);
+        }).toList();
+
+    return ListView.builder(
+      itemCount: suggestions.length,
+      itemBuilder: (context, index) {
+        return CustomerTile(customer: suggestions[index]);
+      },
     );
   }
 }

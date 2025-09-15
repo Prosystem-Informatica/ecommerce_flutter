@@ -18,7 +18,7 @@ class LoginRepository implements ILoginRepository {
       prefs = await SharedPreferences.getInstance();
 
       var url =
-          'http://prosystem.dyndns-work.com:9090/datasnap/rest/TserverAPPnfe/LoginEmpresa/10329033000133';
+          'https://prosystem.dyndns-work.com:9090/datasnap/rest/TserverAPPnfe/LoginEmpresa/10329033000133';
       var response = await http.get(Uri.parse(url));
 
       var jsonData = jsonDecode(response.body);
@@ -50,8 +50,8 @@ class LoginRepository implements ILoginRepository {
       print("Host > ${host}");
       print("Port > ${port}");
 
-      /*var url =
-          'prosystem04.dynds-work.com/datasnap/rest/TServerAPPecf/LoginApp/$login/$password';*/
+      var url =
+          'prosystem04.dynds-work.com/datasnap/rest/TServerAPPecf/LoginApp/$login/$password';
 
       login = login.toUpperCase();
       password = password.toUpperCase();
