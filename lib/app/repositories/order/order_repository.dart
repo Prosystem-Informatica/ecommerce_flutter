@@ -1,16 +1,16 @@
 import 'dart:convert';
 import 'dart:developer';
-import 'package:ecommerce/app/repositories/login/model/login_model.dart';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/rest/rest_client.dart';
 import 'i_order_repository.dart';
 import 'model/product_model.dart';
+import 'model/order_model.dart';
 
 class OrderRepository implements IOrderRepository {
   final RestClient _rest;
   late SharedPreferences prefs;
+
   OrderRepository({required RestClient rest}) : _rest = rest;
 
   @override
@@ -41,7 +41,31 @@ class OrderRepository implements IOrderRepository {
     } catch (e) {
       log(e.toString());
       return [ProductModel()];
-      //return ValidationModel();
+    }
+  }
+
+  Future<List<OrderModel>> getOrders() async {
+    try {
+      prefs = await SharedPreferences.getInstance();
+      final userCode = prefs.getString('userCodigo') ?? '';
+      final companyCode = prefs.getString('companyCodigo') ?? '';
+
+      if (userCode.isEmpty || companyCode.isEmpty) {
+        log("Códigos do usuário ou empresa não encontrados no SharedPreferences");
+        return [];
+      }
+
+      final url =
+          '/datasnap/rest/TServerAPPecf/RetornaSitPedido/$userCode/$companyCode';
+
+      final response = await _rest.get(url);
+      print("Pedidos Situação > ${response.data}");
+
+      final orders = OrderModel.fromJsonList(jsonDecode(response.data));
+      return orders;
+    } catch (e) {
+      log("Erro em getOrders: $e");
+      return [];
     }
   }
 }

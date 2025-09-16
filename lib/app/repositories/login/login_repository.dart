@@ -10,6 +10,7 @@ import 'i_login_repository.dart';
 class LoginRepository implements ILoginRepository {
   final RestClient _rest;
   late SharedPreferences prefs;
+
   LoginRepository({required RestClient rest}) : _rest = rest;
 
   @override
@@ -32,11 +33,8 @@ class LoginRepository implements ILoginRepository {
         'port',
         jsonData[0]['PORTA'].toString().toLowerCase(),
       );
-
-      return;
     } catch (e) {
       log(e.toString());
-      //return ValidationModel();
     }
   }
 
@@ -44,22 +42,12 @@ class LoginRepository implements ILoginRepository {
   Future<LoginModel> login(String login, String password) async {
     try {
       prefs = await SharedPreferences.getInstance();
-      var host = await prefs.getString("host");
-      var port = await prefs.getString("port");
-
-      print("Host > ${host}");
-      print("Port > ${port}");
-
-      var url =
-          'prosystem04.dynds-work.com/datasnap/rest/TServerAPPecf/LoginApp/$login/$password';
 
       login = login.toUpperCase();
       password = password.toUpperCase();
+
       var path = '/datasnap/rest/TServerAPPecf/LoginApp/$login/$password';
       var response = await _rest.get(path);
-
-      login = login.toUpperCase();
-      password = password.toUpperCase();
 
       var jsonData = response.data;
       print("Json > ${jsonData}");
@@ -68,13 +56,21 @@ class LoginRepository implements ILoginRepository {
 
       if (res.validado == "T") {
         await prefs.setString('userLogin', login);
+        await prefs.setString('userCodigo', res.codigo ?? '');
+        await prefs.setString('companyCodigo', res.empresa ?? '');
       }
 
       return res;
     } catch (e) {
       log(e.toString());
       return LoginModel();
-      //return ValidationModel();
     }
+  }
+
+  Future<void> logout() async {
+    prefs = await SharedPreferences.getInstance();
+    await prefs.remove('userLogin');
+    await prefs.remove('userCodigo');
+    await prefs.remove('companyCodigo');
   }
 }

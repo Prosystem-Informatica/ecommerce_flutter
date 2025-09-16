@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
-
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/ui/widget/list_tile_orders_widget.dart';
+import '../../../../repositories/order/model/order_model.dart';
+import '../../../home/modules/cart/cubit/order_bloc_cubit.dart';
+import '../../../home/modules/cart/cubit/order_bloc_state.dart';
+
 
 class OrdersWaitPage extends StatefulWidget {
   const OrdersWaitPage({super.key});
@@ -10,44 +14,29 @@ class OrdersWaitPage extends StatefulWidget {
 }
 
 class _OrdersWaitPageState extends State<OrdersWaitPage> {
-  final List<Map<String, String>> orders = [
-    {
-      'number': '31353',
-      'total': 'R\$22,25',
-      'date': '26/05/2025',
-      'client': 'CLIENTE TESTE',
-    },
-    {
-      'number': '31324',
-      'total': 'R\$70,29',
-      'date': '09/05/2025',
-      'client': 'DEPOSITO NOSSA CASA TATINHO',
-    },
-    {
-      'number': '30594',
-      'total': 'R\$0,01',
-      'date': '27/03/2025',
-      'client': 'WANDERLEY FLORES FERRAGENS ME',
-    },
-  ];
+  String searchQuery = '';
+
+  List<OrderModel> getFilteredOrders(List<OrderModel> orders) {
+    if (searchQuery.isEmpty) return orders;
+    return orders.where((o) {
+      final desc = o.descricao.toLowerCase();
+      final codigo = o.codigo.toLowerCase();
+      return desc.contains(searchQuery.toLowerCase()) ||
+          codigo.contains(searchQuery.toLowerCase());
+    }).toList();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    context.read<OrderBlocCubit>().getOrders();
+  }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      /*appBar: AppBar(
-        backgroundColor: colorScheme.primary,
-        leading: BackButton(color: colorScheme.onPrimary),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("Pedidos", style: TextStyle(color: colorScheme.onPrimary)),
-            Text("EM ABERTO",
-                style: TextStyle(color: colorScheme.error, fontSize: 12)),
-          ],
-        ),
-      ),*/
       body: Column(
         children: [
           Padding(
@@ -56,18 +45,54 @@ class _OrdersWaitPageState extends State<OrdersWaitPage> {
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.search),
                 hintText: 'Buscar pedido...',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(30),),
-                contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 20),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                contentPadding:
+                const EdgeInsets.symmetric(vertical: 0, horizontal: 20),
               ),
+              onChanged: (value) {
+                setState(() {
+                  searchQuery = value;
+                });
+              },
             ),
           ),
           Expanded(
-            child: ListView.separated(
-              itemCount: orders.length,
-              separatorBuilder: (_, __) => Divider(color: colorScheme.shadow,),
-              itemBuilder: (context, index) {
-                final order = orders[index];
-                return ListTileOrdersWidget(order: order);
+            child: BlocBuilder<OrderBlocCubit, OrderBlocState>(
+              builder: (context, state) {
+                if (state.status == OrderStateStatus.loading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (state.status == OrderStateStatus.error) {
+                  return Center(child: Text(state.errorMessage ?? 'Erro'));
+                }
+
+                final orders = state.orderModel ?? [];
+                final filteredOrders = getFilteredOrders(orders);
+
+                if (filteredOrders.isEmpty) {
+                  return const Center(
+                      child: Text('Nenhum pedido encontrado'));
+                }
+
+                return ListView.separated(
+                  itemCount: filteredOrders.length,
+                  separatorBuilder: (_, __) =>
+                      Divider(color: colorScheme.shadow),
+                  itemBuilder: (context, index) {
+                    final order = filteredOrders[index];
+                    return ListTileOrdersWidget(
+                      order: {
+                        'number': order.codigo,
+                        'client': order.descricao,
+                        'total': 'R\$0,00',
+                        'date': '',
+                      },
+                    );
+                  },
+                );
               },
             ),
           ),
