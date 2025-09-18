@@ -1,28 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../repositories/customer/i_customer_repository.dart';
-import '../../../../repositories/customer/customer_repository.dart';
 import '../../../../repositories/customer/model/customer_model.dart';
 import 'cubit/customer_bloc_cubit.dart';
 import 'cubit/customer_bloc_state.dart';
 
-class CustomerPage extends StatefulWidget {
+class CustomerPage extends StatelessWidget {
   const CustomerPage({super.key});
-
-  @override
-  State<CustomerPage> createState() => _CustomerPageState();
-}
-
-class _CustomerPageState extends State<CustomerPage> {
-  late final ICustomerRepository repository;
-
-  @override
-  void initState() {
-    super.initState();
-    repository = CustomerRepository();
-
-    context.read<CustomerBlocCubit>().fetchCustomers();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +39,9 @@ class _CustomerPageState extends State<CustomerPage> {
           }
 
           if (state.status == CustomerStateStatus.error) {
-            return Center(child: Text(state.errorMessage ?? 'Erro desconhecido'));
+            return Center(
+              child: Text(state.errorMessage ?? 'Erro desconhecido'),
+            );
           }
 
           final customers = state.customers ?? [];
@@ -67,7 +52,8 @@ class _CustomerPageState extends State<CustomerPage> {
 
           return ListView.builder(
             itemCount: customers.length,
-            itemBuilder: (context, index) => CustomerTile(customer: customers[index]),
+            itemBuilder: (context, index) =>
+                CustomerTile(customer: customers[index]),
           );
         },
       ),
@@ -143,7 +129,8 @@ class CustomSearchDelegate extends SearchDelegate {
 
     return ListView.builder(
       itemCount: results.length,
-      itemBuilder: (context, index) => CustomerTile(customer: results[index]),
+      itemBuilder: (context, index) =>
+          CustomerTile(customer: results[index]),
     );
   }
 
@@ -160,7 +147,8 @@ class CustomSearchDelegate extends SearchDelegate {
 
     return ListView.builder(
       itemCount: suggestions.length,
-      itemBuilder: (context, index) => CustomerTile(customer: suggestions[index]),
+      itemBuilder: (context, index) =>
+          CustomerTile(customer: suggestions[index]),
     );
   }
 }
