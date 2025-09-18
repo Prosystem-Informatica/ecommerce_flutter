@@ -5,7 +5,6 @@ import '../../../../repositories/order/model/order_model.dart';
 import '../../../home/modules/cart/cubit/order_bloc_cubit.dart';
 import '../../../home/modules/cart/cubit/order_bloc_state.dart';
 
-
 class OrdersWaitPage extends StatefulWidget {
   const OrdersWaitPage({super.key});
 
@@ -65,22 +64,30 @@ class _OrdersWaitPageState extends State<OrdersWaitPage> {
                   return const Center(child: CircularProgressIndicator());
                 }
 
+                // Error
                 if (state.status == OrderStateStatus.error) {
-                  return Center(child: Text(state.errorMessage ?? 'Erro'));
+                  return Center(
+                    child: Text(state.errorMessage ?? 'Erro ao buscar pedidos'),
+                  );
                 }
 
-                final orders = state.orderModel ?? [];
+                List<OrderModel> orders = state.orderModel ?? [];
+
+                if (orders.length == 1 && orders[0].codigo.isEmpty) {
+                  orders = [];
+                }
+
                 final filteredOrders = getFilteredOrders(orders);
 
+                print("Filtered Orders: $filteredOrders");
+
                 if (filteredOrders.isEmpty) {
-                  return const Center(
-                      child: Text('Nenhum pedido encontrado'));
+                  return const Center(child: Text('Nenhum pedido encontrado'));
                 }
 
                 return ListView.separated(
                   itemCount: filteredOrders.length,
-                  separatorBuilder: (_, __) =>
-                      Divider(color: colorScheme.shadow),
+                  separatorBuilder: (_, __) => Divider(color: colorScheme.shadow),
                   itemBuilder: (context, index) {
                     final order = filteredOrders[index];
                     return ListTileOrdersWidget(

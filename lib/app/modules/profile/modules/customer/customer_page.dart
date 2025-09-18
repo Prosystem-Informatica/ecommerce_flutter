@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../../../repositories/customer/customer_repository.dart';
+import '../../../../repositories/customer/model/customer_model.dart';
+
 
 class CustomerPage extends StatefulWidget {
   const CustomerPage({super.key});
@@ -8,22 +11,32 @@ class CustomerPage extends StatefulWidget {
 }
 
 class _CustomerPageState extends State<CustomerPage> {
-  final List<Map<String, String>> customers = [
-    {'name': 'CONSUMIDOR', 'code': '1'},
-    {'name': 'A F TUAN LTDA', 'code': '441'},
-    {'name': 'A.A.SANTOS TUAN MAT CONSTRUÇÃO ME', 'code': '69'},
-    {'name': 'A.C DA SILVA MATERIAIS PARA COSNTRUÇAO', 'code': '312'},
-    {'name': 'A.C.ALVES LAJES ME', 'code': '124'},
-    {'name': 'ADILSON FREITAS DO PRADO CAMPOS DO JORDÃO ME', 'code': '177'},
-    {'name': 'ADRIANA CRISTINA DE LIMA', 'code': '402'},
-    {'name': 'ADRIANO AUGUSTO OLIVEIRA', 'code': '421'},
-    {'name': 'ADRINO MARK G DA SILVA INTALÇOES', 'code': '316'},
-    {'name': 'AGROVALE COMERCIAL DE RAÇOES LTDA ME', 'code': '330'},
-    {'name': 'AIRTON DE SOUSA 63910810187', 'code': '175'},
-    {'name': 'AISLAN VENDEDOR', 'code': '122'},
-    {'name': 'AKS COMERCIO DE MATERIAIS ELETRICOS LTDA ME', 'code': '234'},
-    {'name': 'ALAIDES FERREIRA GOMES 30614124840', 'code': '106'},
-  ];
+  final CustomerRepository repository = CustomerRepository();
+  List<CustomerModel> customers = [];
+  bool loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCustomers();
+  }
+
+  Future<void> _loadCustomers() async {
+    try {
+      final data = await repository.getCustomers();
+      setState(() {
+        customers = data;
+        loading = false;
+      });
+    } catch (e) {
+      setState(() {
+        loading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao carregar clientes: $e')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,18 +44,21 @@ class _CustomerPageState extends State<CustomerPage> {
       appBar: AppBar(
         title: const Text('Clientes'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {
-              showSearch(
-                context: context,
-                delegate: CustomSearchDelegate(customers),
-              );
-            },
-          ),
+          if (!loading && customers.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.search),
+              onPressed: () {
+                showSearch(
+                  context: context,
+                  delegate: CustomSearchDelegate(customers),
+                );
+              },
+            ),
         ],
       ),
-      body: ListView.builder(
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : ListView.builder(
         itemCount: customers.length,
         itemBuilder: (context, index) {
           final customer = customers[index];
@@ -54,7 +70,7 @@ class _CustomerPageState extends State<CustomerPage> {
 }
 
 class CustomerTile extends StatelessWidget {
-  final Map<String, String> customer;
+  final CustomerModel customer;
   const CustomerTile({super.key, required this.customer});
 
   @override
@@ -65,12 +81,12 @@ class CustomerTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            customer['name']!,
+            customer.cliente,
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: 4),
           Text(
-            'Código: ${customer['code']}',
+            'Código: ${customer.codigo}',
             style: TextStyle(fontSize: 14, color: Colors.grey[600]),
           ),
           const Divider(height: 24),
@@ -81,7 +97,7 @@ class CustomerTile extends StatelessWidget {
 }
 
 class CustomSearchDelegate extends SearchDelegate {
-  final List<Map<String, String>> customers;
+  final List<CustomerModel> customers;
   CustomSearchDelegate(this.customers);
 
   @override
@@ -107,12 +123,10 @@ class CustomSearchDelegate extends SearchDelegate {
 
   @override
   Widget buildResults(BuildContext context) {
-    final results =
-        customers.where((c) {
-          final name = c['name']!.toLowerCase();
-          final code = c['code']!;
-          return name.contains(query.toLowerCase()) || code.contains(query);
-        }).toList();
+    final results = customers.where((c) {
+      return c.cliente.toLowerCase().contains(query.toLowerCase()) ||
+          c.codigo.contains(query);
+    }).toList();
 
     return ListView.builder(
       itemCount: results.length,
@@ -124,12 +138,10 @@ class CustomSearchDelegate extends SearchDelegate {
 
   @override
   Widget buildSuggestions(BuildContext context) {
-    final suggestions =
-        customers.where((c) {
-          final name = c['name']!.toLowerCase();
-          final code = c['code']!;
-          return name.contains(query.toLowerCase()) || code.contains(query);
-        }).toList();
+    final suggestions = customers.where((c) {
+      return c.cliente.toLowerCase().contains(query.toLowerCase()) ||
+          c.codigo.contains(query);
+    }).toList();
 
     return ListView.builder(
       itemCount: suggestions.length,

@@ -18,7 +18,16 @@ class OrderModel {
     if (data is List) {
       return data.map((e) => OrderModel.fromJson(e)).toList();
     }
-    return [];
+    return [
+      OrderModel(
+        codigo: '99999',
+        descricao: 'Pedido de Teste',
+      ),
+      OrderModel(
+        codigo: '99999',
+        descricao: 'Pedido de Teste',
+      ),
+    ];
   }
 
   @override
