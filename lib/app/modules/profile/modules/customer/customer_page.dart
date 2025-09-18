@@ -1,29 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../repositories/customer/model/customer_model.dart';
+import 'cubit/customer_bloc_cubit.dart';
+import 'cubit/customer_bloc_state.dart';
 
-class CustomerPage extends StatefulWidget {
+class CustomerPage extends StatelessWidget {
   const CustomerPage({super.key});
-
-  @override
-  State<CustomerPage> createState() => _CustomerPageState();
-}
-
-class _CustomerPageState extends State<CustomerPage> {
-  final List<Map<String, String>> customers = [
-    {'name': 'CONSUMIDOR', 'code': '1'},
-    {'name': 'A F TUAN LTDA', 'code': '441'},
-    {'name': 'A.A.SANTOS TUAN MAT CONSTRUÇÃO ME', 'code': '69'},
-    {'name': 'A.C DA SILVA MATERIAIS PARA COSNTRUÇAO', 'code': '312'},
-    {'name': 'A.C.ALVES LAJES ME', 'code': '124'},
-    {'name': 'ADILSON FREITAS DO PRADO CAMPOS DO JORDÃO ME', 'code': '177'},
-    {'name': 'ADRIANA CRISTINA DE LIMA', 'code': '402'},
-    {'name': 'ADRIANO AUGUSTO OLIVEIRA', 'code': '421'},
-    {'name': 'ADRINO MARK G DA SILVA INTALÇOES', 'code': '316'},
-    {'name': 'AGROVALE COMERCIAL DE RAÇOES LTDA ME', 'code': '330'},
-    {'name': 'AIRTON DE SOUSA 63910810187', 'code': '175'},
-    {'name': 'AISLAN VENDEDOR', 'code': '122'},
-    {'name': 'AKS COMERCIO DE MATERIAIS ELETRICOS LTDA ME', 'code': '234'},
-    {'name': 'ALAIDES FERREIRA GOMES 30614124840', 'code': '106'},
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -31,22 +13,48 @@ class _CustomerPageState extends State<CustomerPage> {
       appBar: AppBar(
         title: const Text('Clientes'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {
-              showSearch(
-                context: context,
-                delegate: CustomSearchDelegate(customers),
-              );
+          BlocBuilder<CustomerBlocCubit, CustomerBlocState>(
+            builder: (context, state) {
+              if (state.status == CustomerStateStatus.success &&
+                  (state.customers?.isNotEmpty ?? false)) {
+                return IconButton(
+                  icon: const Icon(Icons.search),
+                  onPressed: () {
+                    showSearch(
+                      context: context,
+                      delegate: CustomSearchDelegate(state.customers!),
+                    );
+                  },
+                );
+              }
+              return const SizedBox.shrink();
             },
           ),
         ],
       ),
-      body: ListView.builder(
-        itemCount: customers.length,
-        itemBuilder: (context, index) {
-          final customer = customers[index];
-          return CustomerTile(customer: customer);
+      body: BlocBuilder<CustomerBlocCubit, CustomerBlocState>(
+        builder: (context, state) {
+          if (state.status == CustomerStateStatus.loading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (state.status == CustomerStateStatus.error) {
+            return Center(
+              child: Text(state.errorMessage ?? 'Erro desconhecido'),
+            );
+          }
+
+          final customers = state.customers ?? [];
+
+          if (customers.isEmpty) {
+            return const Center(child: Text('Nenhum cliente encontrado'));
+          }
+
+          return ListView.builder(
+            itemCount: customers.length,
+            itemBuilder: (context, index) =>
+                CustomerTile(customer: customers[index]),
+          );
         },
       ),
     );
@@ -54,7 +62,7 @@ class _CustomerPageState extends State<CustomerPage> {
 }
 
 class CustomerTile extends StatelessWidget {
-  final Map<String, String> customer;
+  final CustomerModel customer;
   const CustomerTile({super.key, required this.customer});
 
   @override
@@ -65,12 +73,12 @@ class CustomerTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            customer['name']!,
+            customer.cliente,
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: 4),
           Text(
-            'Código: ${customer['code']}',
+            'Código: ${customer.codigo}',
             style: TextStyle(fontSize: 14, color: Colors.grey[600]),
           ),
           const Divider(height: 24),
@@ -81,7 +89,7 @@ class CustomerTile extends StatelessWidget {
 }
 
 class CustomSearchDelegate extends SearchDelegate {
-  final List<Map<String, String>> customers;
+  final List<CustomerModel> customers;
   CustomSearchDelegate(this.customers);
 
   @override
@@ -102,40 +110,45 @@ class CustomSearchDelegate extends SearchDelegate {
 
   @override
   Widget? buildLeading(BuildContext context) {
-    return null;
+    return IconButton(
+      icon: const Icon(Icons.arrow_back),
+      onPressed: () => close(context, null),
+    );
   }
 
   @override
   Widget buildResults(BuildContext context) {
-    final results =
-        customers.where((c) {
-          final name = c['name']!.toLowerCase();
-          final code = c['code']!;
-          return name.contains(query.toLowerCase()) || code.contains(query);
-        }).toList();
+    final results = customers.where((c) {
+      return c.cliente.toLowerCase().contains(query.toLowerCase()) ||
+          c.codigo.contains(query);
+    }).toList();
+
+    if (results.isEmpty) {
+      return const Center(child: Text('Nenhum cliente encontrado'));
+    }
 
     return ListView.builder(
       itemCount: results.length,
-      itemBuilder: (context, index) {
-        return CustomerTile(customer: results[index]);
-      },
+      itemBuilder: (context, index) =>
+          CustomerTile(customer: results[index]),
     );
   }
 
   @override
   Widget buildSuggestions(BuildContext context) {
-    final suggestions =
-        customers.where((c) {
-          final name = c['name']!.toLowerCase();
-          final code = c['code']!;
-          return name.contains(query.toLowerCase()) || code.contains(query);
-        }).toList();
+    final suggestions = customers.where((c) {
+      return c.cliente.toLowerCase().contains(query.toLowerCase()) ||
+          c.codigo.contains(query);
+    }).toList();
+
+    if (suggestions.isEmpty) {
+      return const Center(child: Text('Nenhum cliente encontrado'));
+    }
 
     return ListView.builder(
       itemCount: suggestions.length,
-      itemBuilder: (context, index) {
-        return CustomerTile(customer: suggestions[index]);
-      },
+      itemBuilder: (context, index) =>
+          CustomerTile(customer: suggestions[index]),
     );
   }
 }
