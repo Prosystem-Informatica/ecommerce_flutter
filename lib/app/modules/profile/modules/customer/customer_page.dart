@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../repositories/customer/customer_repository.dart';
+import '../../../../repositories/customer/i_customer_repository.dart';
 import '../../../../repositories/customer/model/customer_model.dart';
-
 
 class CustomerPage extends StatefulWidget {
   const CustomerPage({super.key});
@@ -11,30 +11,33 @@ class CustomerPage extends StatefulWidget {
 }
 
 class _CustomerPageState extends State<CustomerPage> {
-  final CustomerRepository repository = CustomerRepository();
+  late final ICustomerRepository repository;
   List<CustomerModel> customers = [];
   bool loading = true;
 
   @override
   void initState() {
     super.initState();
+    repository = CustomerRepository();
     _loadCustomers();
   }
 
   Future<void> _loadCustomers() async {
     try {
       final data = await repository.getCustomers();
+      if (!mounted) return;
       setState(() {
         customers = data;
         loading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         loading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao carregar clientes: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erro ao carregar clientes: $e')));
     }
   }
 
@@ -56,15 +59,16 @@ class _CustomerPageState extends State<CustomerPage> {
             ),
         ],
       ),
-      body: loading
-          ? const Center(child: CircularProgressIndicator())
-          : ListView.builder(
-        itemCount: customers.length,
-        itemBuilder: (context, index) {
-          final customer = customers[index];
-          return CustomerTile(customer: customer);
-        },
-      ),
+      body:
+          loading
+              ? const Center(child: CircularProgressIndicator())
+              : ListView.builder(
+                itemCount: customers.length,
+                itemBuilder: (context, index) {
+                  final customer = customers[index];
+                  return CustomerTile(customer: customer);
+                },
+              ),
     );
   }
 }
@@ -118,36 +122,46 @@ class CustomSearchDelegate extends SearchDelegate {
 
   @override
   Widget? buildLeading(BuildContext context) {
-    return null;
+    return IconButton(
+      icon: const Icon(Icons.arrow_back),
+      onPressed: () => close(context, null),
+    );
   }
 
   @override
   Widget buildResults(BuildContext context) {
-    final results = customers.where((c) {
-      return c.cliente.toLowerCase().contains(query.toLowerCase()) ||
-          c.codigo.contains(query);
-    }).toList();
+    final results =
+        customers.where((c) {
+          return c.cliente.toLowerCase().contains(query.toLowerCase()) ||
+              c.codigo.contains(query);
+        }).toList();
+
+    if (results.isEmpty) {
+      return const Center(child: Text('Nenhum cliente encontrado'));
+    }
 
     return ListView.builder(
       itemCount: results.length,
-      itemBuilder: (context, index) {
-        return CustomerTile(customer: results[index]);
-      },
+      itemBuilder: (context, index) => CustomerTile(customer: results[index]),
     );
   }
 
   @override
   Widget buildSuggestions(BuildContext context) {
-    final suggestions = customers.where((c) {
-      return c.cliente.toLowerCase().contains(query.toLowerCase()) ||
-          c.codigo.contains(query);
-    }).toList();
+    final suggestions =
+        customers.where((c) {
+          return c.cliente.toLowerCase().contains(query.toLowerCase()) ||
+              c.codigo.contains(query);
+        }).toList();
+
+    if (suggestions.isEmpty) {
+      return const Center(child: Text('Nenhum cliente encontrado'));
+    }
 
     return ListView.builder(
       itemCount: suggestions.length,
-      itemBuilder: (context, index) {
-        return CustomerTile(customer: suggestions[index]);
-      },
+      itemBuilder:
+          (context, index) => CustomerTile(customer: suggestions[index]),
     );
   }
 }
