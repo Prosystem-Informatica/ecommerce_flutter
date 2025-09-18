@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../../../repositories/customer/customer_repository.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../repositories/customer/i_customer_repository.dart';
+import '../../../../repositories/customer/customer_repository.dart';
 import '../../../../repositories/customer/model/customer_model.dart';
+import 'cubit/customer_bloc_cubit.dart';
+import 'cubit/customer_bloc_state.dart';
 
 class CustomerPage extends StatefulWidget {
   const CustomerPage({super.key});
@@ -12,33 +15,13 @@ class CustomerPage extends StatefulWidget {
 
 class _CustomerPageState extends State<CustomerPage> {
   late final ICustomerRepository repository;
-  List<CustomerModel> customers = [];
-  bool loading = true;
 
   @override
   void initState() {
     super.initState();
     repository = CustomerRepository();
-    _loadCustomers();
-  }
 
-  Future<void> _loadCustomers() async {
-    try {
-      final data = await repository.getCustomers();
-      if (!mounted) return;
-      setState(() {
-        customers = data;
-        loading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        loading = false;
-      });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Erro ao carregar clientes: $e')));
-    }
+    context.read<CustomerBlocCubit>().fetchCustomers();
   }
 
   @override
@@ -47,28 +30,47 @@ class _CustomerPageState extends State<CustomerPage> {
       appBar: AppBar(
         title: const Text('Clientes'),
         actions: [
-          if (!loading && customers.isNotEmpty)
-            IconButton(
-              icon: const Icon(Icons.search),
-              onPressed: () {
-                showSearch(
-                  context: context,
-                  delegate: CustomSearchDelegate(customers),
+          BlocBuilder<CustomerBlocCubit, CustomerBlocState>(
+            builder: (context, state) {
+              if (state.status == CustomerStateStatus.success &&
+                  (state.customers?.isNotEmpty ?? false)) {
+                return IconButton(
+                  icon: const Icon(Icons.search),
+                  onPressed: () {
+                    showSearch(
+                      context: context,
+                      delegate: CustomSearchDelegate(state.customers!),
+                    );
+                  },
                 );
-              },
-            ),
+              }
+              return const SizedBox.shrink();
+            },
+          ),
         ],
       ),
-      body:
-          loading
-              ? const Center(child: CircularProgressIndicator())
-              : ListView.builder(
-                itemCount: customers.length,
-                itemBuilder: (context, index) {
-                  final customer = customers[index];
-                  return CustomerTile(customer: customer);
-                },
-              ),
+      body: BlocBuilder<CustomerBlocCubit, CustomerBlocState>(
+        builder: (context, state) {
+          if (state.status == CustomerStateStatus.loading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (state.status == CustomerStateStatus.error) {
+            return Center(child: Text(state.errorMessage ?? 'Erro desconhecido'));
+          }
+
+          final customers = state.customers ?? [];
+
+          if (customers.isEmpty) {
+            return const Center(child: Text('Nenhum cliente encontrado'));
+          }
+
+          return ListView.builder(
+            itemCount: customers.length,
+            itemBuilder: (context, index) => CustomerTile(customer: customers[index]),
+          );
+        },
+      ),
     );
   }
 }
@@ -130,11 +132,10 @@ class CustomSearchDelegate extends SearchDelegate {
 
   @override
   Widget buildResults(BuildContext context) {
-    final results =
-        customers.where((c) {
-          return c.cliente.toLowerCase().contains(query.toLowerCase()) ||
-              c.codigo.contains(query);
-        }).toList();
+    final results = customers.where((c) {
+      return c.cliente.toLowerCase().contains(query.toLowerCase()) ||
+          c.codigo.contains(query);
+    }).toList();
 
     if (results.isEmpty) {
       return const Center(child: Text('Nenhum cliente encontrado'));
@@ -148,11 +149,10 @@ class CustomSearchDelegate extends SearchDelegate {
 
   @override
   Widget buildSuggestions(BuildContext context) {
-    final suggestions =
-        customers.where((c) {
-          return c.cliente.toLowerCase().contains(query.toLowerCase()) ||
-              c.codigo.contains(query);
-        }).toList();
+    final suggestions = customers.where((c) {
+      return c.cliente.toLowerCase().contains(query.toLowerCase()) ||
+          c.codigo.contains(query);
+    }).toList();
 
     if (suggestions.isEmpty) {
       return const Center(child: Text('Nenhum cliente encontrado'));
@@ -160,8 +160,7 @@ class CustomSearchDelegate extends SearchDelegate {
 
     return ListView.builder(
       itemCount: suggestions.length,
-      itemBuilder:
-          (context, index) => CustomerTile(customer: suggestions[index]),
+      itemBuilder: (context, index) => CustomerTile(customer: suggestions[index]),
     );
   }
 }
