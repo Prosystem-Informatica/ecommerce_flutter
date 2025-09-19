@@ -52,16 +52,25 @@ class OrderBlocCubit extends Cubit<OrderBlocState> {
       ));
     }
   }
-  Future<void> getOrders() async {
+  Future<void> getOrders({String implemented = "NAO"}) async {
     try {
       emit(state.copyWith(status: OrderStateStatus.loading));
-      final orders = await orderRepository.getOrders();
+
+      final orders = await orderRepository.getOrders(implemented: implemented);
+
       emit(
-          state.copyWith(status: OrderStateStatus.success, orderModel: orders));
+        state.copyWith(
+          status: OrderStateStatus.success,
+          orderModel: orders,
+        ),
+      );
     } catch (e) {
-      emit(state.copyWith(
+      emit(
+        state.copyWith(
           status: OrderStateStatus.error,
-          errorMessage: "Erro ao carregar pedidos"));
+          errorMessage: "Erro ao carregar pedidos",
+        ),
+      );
     }
   }
 }
