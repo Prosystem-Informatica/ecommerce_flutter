@@ -18,17 +18,17 @@ class _OrdersWaitPageState extends State<OrdersWaitPage> {
   List<OrderModel> getFilteredOrders(List<OrderModel> orders) {
     if (searchQuery.isEmpty) return orders;
     return orders.where((o) {
-      final desc = o.descricao.toLowerCase();
-      final codigo = o.codigo.toLowerCase();
-      return desc.contains(searchQuery.toLowerCase()) ||
-          codigo.contains(searchQuery.toLowerCase());
+      final cliente = o.cliente.toLowerCase();
+      final pedido = o.pedido.toLowerCase();
+      return cliente.contains(searchQuery.toLowerCase()) ||
+          pedido.contains(searchQuery.toLowerCase());
     }).toList();
   }
 
   @override
   void initState() {
     super.initState();
-    context.read<OrderBlocCubit>().getOrders();
+    context.read<OrderBlocCubit>().getOrders(implemented: "NÃO");
   }
 
   @override
@@ -64,7 +64,6 @@ class _OrdersWaitPageState extends State<OrdersWaitPage> {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                // Error
                 if (state.status == OrderStateStatus.error) {
                   return Center(
                     child: Text(state.errorMessage ?? 'Erro ao buscar pedidos'),
@@ -72,14 +71,11 @@ class _OrdersWaitPageState extends State<OrdersWaitPage> {
                 }
 
                 List<OrderModel> orders = state.orderModel ?? [];
-
-                if (orders.length == 1 && orders[0].codigo.isEmpty) {
+                if (orders.length == 1 && orders[0].pedido.isEmpty) {
                   orders = [];
                 }
 
                 final filteredOrders = getFilteredOrders(orders);
-
-                print("Filtered Orders: $filteredOrders");
 
                 if (filteredOrders.isEmpty) {
                   return const Center(child: Text('Nenhum pedido encontrado'));
@@ -87,15 +83,16 @@ class _OrdersWaitPageState extends State<OrdersWaitPage> {
 
                 return ListView.separated(
                   itemCount: filteredOrders.length,
-                  separatorBuilder: (_, __) => Divider(color: colorScheme.shadow),
+                  separatorBuilder: (_, __) =>
+                      Divider(color: colorScheme.shadow),
                   itemBuilder: (context, index) {
                     final order = filteredOrders[index];
                     return ListTileOrdersWidget(
                       order: {
-                        'number': order.codigo,
-                        'client': order.descricao,
-                        'total': 'R\$0,00',
-                        'date': '',
+                        'number': order.pedido,
+                        'client': order.cliente,
+                        'total': order.total,
+                        'date': order.data,
                       },
                     );
                   },

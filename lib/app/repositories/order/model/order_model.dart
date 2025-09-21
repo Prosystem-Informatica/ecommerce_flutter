@@ -1,16 +1,25 @@
 class OrderModel {
-  final String codigo;
-  final String descricao;
+  final String pedido;
+  final String data;
+  final String cliente;
+  final String total;
+  final String desconto;
 
   OrderModel({
-    this.codigo = '',
-    this.descricao = '',
+    this.pedido = '',
+    this.data = '',
+    this.cliente = '',
+    this.total = '',
+    this.desconto = '',
   });
 
   factory OrderModel.fromJson(Map<String, dynamic> json) {
     return OrderModel(
-      codigo: json['CODIGO']?.toString() ?? '',
-      descricao: json['DESCR']?.toString() ?? '',
+      pedido: json['PEDIDO']?.toString() ?? '',
+      data: json['DATA']?.toString() ?? '',
+      cliente: json['CLIENTE']?.toString() ?? '',
+      total: json['TOTAL']?.toString() ?? '',
+      desconto: json['DESCONTO']?.toString() ?? '',
     );
   }
 
@@ -18,18 +27,10 @@ class OrderModel {
     if (data is List) {
       return data.map((e) => OrderModel.fromJson(e)).toList();
     }
-    return [
-      OrderModel(
-        codigo: '99999',
-        descricao: 'Pedido de Teste',
-      ),
-      OrderModel(
-        codigo: '99999',
-        descricao: 'Pedido de Teste',
-      ),
-    ];
+    return [];
   }
 
   @override
-  String toString() => 'OrderModel(codigo: $codigo, descricao: $descricao)';
+  String toString() =>
+      'OrderModel(pedido: $pedido, cliente: $cliente, data: $data, total: $total, desconto: $desconto)';
 }
