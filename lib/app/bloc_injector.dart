@@ -2,6 +2,7 @@ import 'package:ecommerce/app/modules/home/modules/cart/cubit/order_bloc_cubit.d
 import 'package:ecommerce/app/repositories/customer/customer_repository.dart';
 import 'package:ecommerce/app/repositories/login/login_repository.dart';
 import 'package:ecommerce/app/repositories/order/order_repository.dart';
+import 'package:ecommerce/app/repositories/product/consult_product_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -11,6 +12,7 @@ import 'core/helpers/environments.dart';
 import 'core/rest/http/http_rest_client.dart';
 import 'core/rest/rest_client.dart';
 import 'modules/login/cubit/login_bloc_cubit.dart';
+import 'modules/profile/modules/consultProduct/cubit/consult_product_bloc_cubit.dart';
 import 'modules/profile/modules/customer/cubit/customer_bloc_cubit.dart';
 
 class BlocInjection extends StatelessWidget {
@@ -42,6 +44,12 @@ class BlocInjection extends StatelessWidget {
               (_) =>
                   CustomerBlocCubit(customerRepository: CustomerRepository())
                     ..fetchCustomers(),
+        ),
+        BlocProvider<ConsultProductBlocCubit>(
+          create:
+              (_) => ConsultProductBlocCubit(
+                productRepository: ConsultProductRepository(),
+              )..fetchProducts(),
         ),
       ],
       child: const AppWidget(),
