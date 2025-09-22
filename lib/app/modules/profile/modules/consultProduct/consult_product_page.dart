@@ -25,7 +25,6 @@ class _ConsultProductPageState extends State<ConsultProductPage> {
       ),
       body: Column(
         children: [
-          // Campo de busca + botão de alternar grid/list
           Padding(
             padding: const EdgeInsets.all(12.0),
             child: Row(
@@ -68,7 +67,6 @@ class _ConsultProductPageState extends State<ConsultProductPage> {
             ),
           ),
 
-          // Lista ou grid de produtos
           Expanded(
             child: BlocBuilder<ConsultProductBlocCubit, ConsultProductBlocState>(
               builder: (context, state) {
@@ -82,7 +80,6 @@ class _ConsultProductPageState extends State<ConsultProductPage> {
                   );
                 }
 
-                // Filtro por nome ou código
                 final filteredProducts = (state.products ?? []).where((p) {
                   return p.produto.toLowerCase().contains(searchQuery.toLowerCase()) ||
                       p.codigo.toLowerCase().contains(searchQuery.toLowerCase());
