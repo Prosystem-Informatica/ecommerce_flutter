@@ -49,34 +49,19 @@ class _ProfilePageState extends State<ProfilePage> {
           Expanded(
             child: ListView(
               children: [
-               /* ListTile(
-                  leading: Icon(Icons.access_time, color: colorScheme.primary),
-                  title: Text("Pedidos em Aberto"),
-                  onTap: () {
-                    Get.toNamed("/orders_open");
-                  },
-                ),
-                ListTile(
-                  leading: Icon(Icons.handshake_rounded, color: colorScheme.primary),
-                  title: Text("Pedidos Concluídos"),
-                  onTap: () {
-                    Get.toNamed("/orders_finish");
-                  },
-                ),
-                ListTile(
-                  leading: Icon(Icons.notifications, color: colorScheme.primary),
-                  title: Text("Pedidos a Enviar"),
-                  onTap: () {},
-                ),*/
                 ListTile(
                   leading: Icon(Icons.content_paste_search, color: colorScheme.primary),
                   title: Text("Consultar Produtos"),
-                  onTap: () {},
+                  onTap: () {
+                    Get.toNamed("/ConsultProduct");
+                  },
                 ),
                 ListTile(
                   leading: Icon(Icons.attach_money, color: colorScheme.primary),
                   title: Text("Comissão"),
-                  onTap: () {},
+                  onTap: () {
+                    Get.toNamed("/commission");
+                  },
                 ),
                 ListTile(
                   leading: Icon(Icons.person_search_rounded, color: colorScheme.primary),
