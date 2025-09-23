@@ -1,7 +1,9 @@
-import 'package:ecommerce/app/core/ui/app_colors.dart';
 import 'package:flutter/material.dart';
-
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/ui/widget/list_tile_orders_widget.dart';
+import '../../../../repositories/order/model/order_model.dart';
+import '../../../home/modules/cart/cubit/order_bloc_cubit.dart';
+import '../../../home/modules/cart/cubit/order_bloc_state.dart';
 
 class OrdersFinishPage extends StatefulWidget {
   const OrdersFinishPage({super.key});
@@ -11,44 +13,29 @@ class OrdersFinishPage extends StatefulWidget {
 }
 
 class _OrdersFinishPageState extends State<OrdersFinishPage> {
-  final List<Map<String, String>> orders = [
-    {
-      'number': '31349',
-      'total': 'R\$65,44',
-      'date': '12/05/2025',
-      'client': 'SILVA MELO COMERCIO DE FERRAGENS LTDA ME',
-    },
-    {
-      'number': '31295',
-      'total': 'R\$936,37',
-      'date': '08/05/2025',
-      'client': 'EDUARDO DE J R.O. G.B FONSECA ME',
-    },
-    {
-      'number': '30707',
-      'total': 'R\$1037,7',
-      'date': '02/04/2025',
-      'client': 'V F DE PAULA JUNIOR',
-    },
-  ];
+  String searchQuery = '';
+
+  List<OrderModel> getFilteredOrders(List<OrderModel> orders) {
+    if (searchQuery.isEmpty) return orders;
+    return orders.where((o) {
+      final cliente = o.cliente.toLowerCase();
+      final pedido = o.pedido.toLowerCase();
+      return cliente.contains(searchQuery.toLowerCase()) ||
+          pedido.contains(searchQuery.toLowerCase());
+    }).toList();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    context.read<OrderBlocCubit>().getOrders(implemented: "SIM");
+  }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      /*appBar: AppBar(
-        backgroundColor: colorScheme.primary,
-        leading: BackButton(color: colorScheme.onPrimary),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("Pedidos", style: TextStyle(color: colorScheme.onPrimary)),
-            Text("CONCLUIDOS",
-                style: TextStyle(color: AppColors.success, fontSize: 12)),
-          ],
-        ),
-      ),*/
       body: Column(
         children: [
           Padding(
@@ -57,19 +44,60 @@ class _OrdersFinishPageState extends State<OrdersFinishPage> {
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.search),
                 hintText: 'Buscar pedido...',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(30)),
-                contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 20),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                contentPadding:
+                const EdgeInsets.symmetric(vertical: 0, horizontal: 20),
               ),
+              onChanged: (value) {
+                setState(() {
+                  searchQuery = value;
+                });
+              },
             ),
           ),
-          Divider(height: 0, color: colorScheme.outline),
           Expanded(
-            child: ListView.separated(
-              itemCount: orders.length,
-              separatorBuilder: (_, __) => const Divider(),
-              itemBuilder: (context, index) {
-                final order = orders[index];
-                return ListTileOrdersWidget(order: order);
+            child: BlocBuilder<OrderBlocCubit, OrderBlocState>(
+              builder: (context, state) {
+                if (state.status == OrderStateStatus.loading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (state.status == OrderStateStatus.error) {
+                  return Center(
+                    child: Text(state.errorMessage ?? 'Erro ao buscar pedidos'),
+                  );
+                }
+
+                List<OrderModel> orders = state.orderModel ?? [];
+
+                if (orders.length == 1 && orders[0].pedido.isEmpty) {
+                  orders = [];
+                }
+
+                final filteredOrders = getFilteredOrders(orders);
+
+                if (filteredOrders.isEmpty) {
+                  return const Center(child: Text('Nenhum pedido encontrado'));
+                }
+
+                return ListView.separated(
+                  itemCount: filteredOrders.length,
+                  separatorBuilder: (_, __) =>
+                      Divider(color: colorScheme.shadow),
+                  itemBuilder: (context, index) {
+                    final order = filteredOrders[index];
+                    return ListTileOrdersWidget(
+                      order: {
+                        'number': order.pedido,
+                        'client': order.cliente,
+                        'total': order.total,
+                        'date': order.data,
+                      },
+                    );
+                  },
+                );
               },
             ),
           ),

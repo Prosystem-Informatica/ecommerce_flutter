@@ -28,7 +28,7 @@ class _OrdersOpenPageState extends State<OrdersOpenPage> {
   @override
   void initState() {
     super.initState();
-    context.read<OrderBlocCubit>().getOrders(implemented: "SIM");
+    context.read<OrderBlocCubit>().getOrders(implemented: "NÃO");
   }
 
   @override
@@ -71,7 +71,6 @@ class _OrdersOpenPageState extends State<OrdersOpenPage> {
                 }
 
                 List<OrderModel> orders = state.orderModel ?? [];
-
                 if (orders.length == 1 && orders[0].pedido.isEmpty) {
                   orders = [];
                 }
