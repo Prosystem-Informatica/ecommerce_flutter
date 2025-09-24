@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 import '../../../../repositories/product/model/consult_product_model.dart';
 import '../../../profile/modules/consultProduct/cubit/consult_product_bloc_cubit.dart';
 import '../../../profile/modules/consultProduct/cubit/consult_product_bloc_state.dart';
@@ -316,6 +318,7 @@ class _ProductListPageState extends State<ProductListPage> with TickerProviderSt
 
               ElevatedButton(
                 onPressed: () {
+                  Get.toNamed("/finish_cart");
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,

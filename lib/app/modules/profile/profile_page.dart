@@ -60,7 +60,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   leading: Icon(Icons.attach_money, color: colorScheme.primary),
                   title: Text("Comissão"),
                   onTap: () {
-                    Get.toNamed("/commission");
+                    Get.toNamed("/Commission");
                   },
                 ),
                 ListTile(

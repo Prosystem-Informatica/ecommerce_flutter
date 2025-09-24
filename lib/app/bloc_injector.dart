@@ -1,4 +1,5 @@
 import 'package:ecommerce/app/modules/home/modules/cart/cubit/order_bloc_cubit.dart';
+import 'package:ecommerce/app/repositories/commission/commission_repository.dart';
 import 'package:ecommerce/app/repositories/customer/customer_repository.dart';
 import 'package:ecommerce/app/repositories/login/login_repository.dart';
 import 'package:ecommerce/app/repositories/order/order_repository.dart';
@@ -12,6 +13,7 @@ import 'core/helpers/environments.dart';
 import 'core/rest/http/http_rest_client.dart';
 import 'core/rest/rest_client.dart';
 import 'modules/login/cubit/login_bloc_cubit.dart';
+import 'modules/profile/modules/commission/cubit/commission_bloc_cubit.dart';
 import 'modules/profile/modules/consultProduct/cubit/consult_product_bloc_cubit.dart';
 import 'modules/profile/modules/customer/cubit/customer_bloc_cubit.dart';
 
@@ -50,6 +52,11 @@ class BlocInjection extends StatelessWidget {
               (_) => ConsultProductBlocCubit(
                 productRepository: ConsultProductRepository(),
               )..fetchProducts(),
+        ),
+        BlocProvider<CommissionBlocCubit>(
+          create: (_) => CommissionBlocCubit(
+            repository: CommissionRepository(),
+          ),
         ),
       ],
       child: const AppWidget(),
