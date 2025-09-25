@@ -6,7 +6,7 @@ part of 'commission_bloc_state.dart';
 // MatchExtensionGenerator
 // **************************************************************************
 
-extension CommissionStatusMatch on CommissionBlocStatus {
+extension CommissionBlocStatusMatch on CommissionBlocStatus {
   T match<T>(
       {required T Function() initial,
       required T Function() loading,
@@ -29,7 +29,8 @@ extension CommissionStatusMatch on CommissionBlocStatus {
       return error();
     }
 
-    throw Exception('CommissionBlocStatus.match failed, found no match for: $this');
+    throw Exception(
+        'CommissionBlocStatus.match failed, found no match for: $this');
   }
 
   T matchAny<T>(

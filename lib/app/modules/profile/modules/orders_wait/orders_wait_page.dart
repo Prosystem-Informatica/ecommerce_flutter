@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/ui/widget/list_tile_orders_widget.dart';
 import '../../../../repositories/order/model/order_model.dart';
-import '../../../home/modules/cart/cubit/order_bloc_cubit.dart';
-import '../../../home/modules/cart/cubit/order_bloc_state.dart';
+import '../../../home/modules/cart/cubit/order/order_bloc_cubit.dart';
+import '../../../home/modules/cart/cubit/order/order_bloc_state.dart';
 
 class OrdersWaitPage extends StatefulWidget {
   const OrdersWaitPage({super.key});

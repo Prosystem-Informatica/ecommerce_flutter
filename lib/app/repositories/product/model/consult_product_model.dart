@@ -4,6 +4,7 @@ class ConsultProductModel {
   final String preco;
   final String estoque;
   final String imagem;
+  int quantidade;
 
   ConsultProductModel({
     required this.codigo,
@@ -11,6 +12,7 @@ class ConsultProductModel {
     required this.preco,
     required this.estoque,
     required this.imagem,
+    this.quantidade = 0,
   });
 
   factory ConsultProductModel.fromJson(Map<String, dynamic> json) {
@@ -20,6 +22,7 @@ class ConsultProductModel {
       preco: json['PRECO']?.toString() ?? '',
       estoque: json['ESTOQUE']?.toString() ?? '',
       imagem: json['IMAGEM']?.toString() ?? '',
+      quantidade: json['QUANTIDADE']?.toInt() ?? 0,
     );
   }
 
@@ -30,6 +33,7 @@ class ConsultProductModel {
       'PRECO': preco,
       'ESTOQUE': estoque,
       'IMAGEM': imagem,
+      'QUANTIDADE': quantidade,
     };
   }
 }

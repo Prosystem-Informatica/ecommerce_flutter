@@ -73,7 +73,7 @@ class _HomePageState extends State<HomePage> {
       backgroundColor: colorScheme.onPrimary,
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Get.toNamed("/add_cart");
+          Get.toNamed("/finish_cart");
         },
         backgroundColor: colorScheme.primary,
         child: const Icon(Icons.add, color: Colors.white),
