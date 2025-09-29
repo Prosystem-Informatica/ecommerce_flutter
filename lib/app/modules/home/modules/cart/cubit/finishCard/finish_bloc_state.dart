@@ -12,8 +12,8 @@ enum FinishCartStatus { initial, loading, error, success }
 class FinishCartState extends Equatable {
   final List<ConsultProductModel> produtos;
   final CustomerModel? cliente;
-  final PaymentModel? condicaoPagamento;
-  final PaymentModel? tipoPagamento;
+  final CondicaoPagamentoModel? condicaoPagamento;
+  final TipoPagamentoModel? tipoPagamento;
   final String obs;
   final String vendedorLogin;
   final double total;
@@ -49,8 +49,8 @@ class FinishCartState extends Equatable {
   FinishCartState copyWith({
     List<ConsultProductModel>? produtos,
     CustomerModel? cliente,
-    PaymentModel? condicaoPagamento,
-    PaymentModel? tipoPagamento,
+    CondicaoPagamentoModel? condicaoPagamento,
+    TipoPagamentoModel? tipoPagamento,
     String? obs,
     String? vendedorLogin,
     double? total,
@@ -64,10 +64,43 @@ class FinishCartState extends Equatable {
       tipoPagamento: tipoPagamento ?? this.tipoPagamento,
       obs: obs ?? this.obs,
       vendedorLogin: vendedorLogin ?? this.vendedorLogin,
-      total: total ?? this.total,
+      total: total ?? _calculaTotal(produtos ?? this.produtos),
       status: status ?? this.status,
       errorMessage: errorMessage ?? this.errorMessage,
     );
+  }
+
+  double _calculaTotal(List<ConsultProductModel> produtos) {
+    return produtos.fold<double>(
+      0.0,
+          (sum, p) =>
+      sum + (double.tryParse(p.preco.replaceAll(',', '.')) ?? 0) * p.quantidade,
+    );
+  }
+
+  List<Map<String, dynamic>> get produtosAgrupados {
+    final Map<String, ConsultProductModel> agrupados = {};
+    for (var p in produtos) {
+      if (agrupados.containsKey(p.codigo)) {
+        agrupados[p.codigo]!.quantidade += p.quantidade;
+      } else {
+        agrupados[p.codigo] = ConsultProductModel(
+          codigo: p.codigo,
+          produto: p.produto,
+          preco: p.preco,
+          estoque: p.estoque,
+          imagem: p.imagem,
+          quantidade: p.quantidade,
+        );
+      }
+    }
+    return agrupados.values
+        .map((p) => {
+      'ID_PROD': p.codigo,
+      'QtdProd': p.quantidade,
+      'PrcUnit': p.preco,
+    })
+        .toList();
   }
 
   @override

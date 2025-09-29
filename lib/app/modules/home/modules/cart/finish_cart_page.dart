@@ -15,6 +15,8 @@ class FinishCartPage extends StatefulWidget {
 }
 
 class _FinishCartPageState extends State<FinishCartPage> {
+  final TextEditingController _descontoController = TextEditingController();
+
   void showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -45,14 +47,22 @@ class _FinishCartPageState extends State<FinishCartPage> {
     return true;
   }
 
+  double calcularTotalComDesconto(FinishCartState state) {
+    final desconto = double.tryParse(_descontoController.text.replaceAll(',', '.')) ?? 0.0;
+    final total = state.total - desconto;
+    return total >= 0 ? total : 0;
+  }
+
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<FinishCartCubit>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Novo Pedido")),
+      appBar: AppBar(title: const Text("Finalizar Pedido")),
       body: BlocBuilder<FinishCartCubit, FinishCartState>(
         builder: (context, state) {
+          final totalComDesconto = calcularTotalComDesconto(state);
+
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -97,15 +107,15 @@ class _FinishCartPageState extends State<FinishCartPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text("Produtos",
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold)),
+                    const Text(
+                      "Produtos",
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
                     ElevatedButton(
                       onPressed: () async {
                         final result = await Navigator.push<List<ConsultProductModel>>(
                           context,
-                          MaterialPageRoute(
-                              builder: (_) => const ProductListPage()),
+                          MaterialPageRoute(builder: (_) => const ProductListPage()),
                         );
                         if (result != null) {
                           cubit.setProdutos(result);
@@ -141,7 +151,7 @@ class _FinishCartPageState extends State<FinishCartPage> {
                   onTap: () async {
                     final condicoes = await cubit.fetchCondicoesPagamento();
                     if (!mounted) return;
-                    _showSearch<PaymentModel>(
+                    _showSearch<CondicaoPagamentoModel>(
                       context: context,
                       title: "Selecione a Condição de Pagamento",
                       items: condicoes,
@@ -150,10 +160,8 @@ class _FinishCartPageState extends State<FinishCartPage> {
                     );
                   },
                   child: InputDecorator(
-                    decoration:
-                    const InputDecoration(labelText: "Condição de Pagamento"),
-                    child:
-                    Text(state.condicaoPagamento?.descricao ?? "Selecionar"),
+                    decoration: const InputDecoration(labelText: "Condição de Pagamento"),
+                    child: Text(state.condicaoPagamento?.descricao ?? "Selecionar"),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -162,7 +170,7 @@ class _FinishCartPageState extends State<FinishCartPage> {
                   onTap: () async {
                     final tipos = await cubit.fetchTiposPagamento();
                     if (!mounted) return;
-                    _showSearch<PaymentModel>(
+                    _showSearch<TipoPagamentoModel>(
                       context: context,
                       title: "Selecione o Tipo de Pagamento",
                       items: tipos,
@@ -171,10 +179,22 @@ class _FinishCartPageState extends State<FinishCartPage> {
                     );
                   },
                   child: InputDecorator(
-                    decoration:
-                    const InputDecoration(labelText: "Tipo de Pagamento"),
+                    decoration: const InputDecoration(labelText: "Tipo de Pagamento"),
                     child: Text(state.tipoPagamento?.descricao ?? "Selecionar"),
                   ),
+                ),
+                const SizedBox(height: 20),
+
+                TextField(
+                  controller: _descontoController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: "Desconto",
+                    prefixText: "R\$ ",
+                  ),
+                  onChanged: (_) {
+                    setState(() {});
+                  },
                 ),
                 const SizedBox(height: 20),
 
@@ -187,9 +207,11 @@ class _FinishCartPageState extends State<FinishCartPage> {
                       children: [
                         const Text("Total Pedido",
                             style: TextStyle(fontWeight: FontWeight.bold)),
-                        Text("R\$ ${state.total.toStringAsFixed(2)}",
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 18)),
+                        Text(
+                          "R\$ ${totalComDesconto.toStringAsFixed(2)}",
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 18),
+                        ),
                       ],
                     ),
                   ),
@@ -199,15 +221,27 @@ class _FinishCartPageState extends State<FinishCartPage> {
                   children: [
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () {
-                          if (validateFields(state)) {
-                            Navigator.pop(context, state);
+                        onPressed: () async {
+                          if (!validateFields(state)) return;
+
+                          final desconto = double.tryParse(_descontoController.text.replaceAll(',', '.')) ?? 0.0;
+                          final sucesso = await cubit.enviarPedido(desconto);
+
+                          if (sucesso) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text("Pedido enviado com sucesso!")),
+                            );
+                            Navigator.pop(context);
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(cubit.state.errorMessage ?? "Erro ao enviar pedido")),
+                            );
                           }
                         },
                         style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.green,
                             foregroundColor: Colors.white),
-                        child: const Text("Gravar"),
+                        child: const Text("Enviar"),
                       ),
                     ),
                     const SizedBox(width: 10),

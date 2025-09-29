@@ -2,6 +2,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../../../repositories/customer/customer_repository.dart';
 import '../../../../../../repositories/customer/model/customer_model.dart';
+import '../../../../../../repositories/finishCard/finish_card_repository.dart';
+import '../../../../../../repositories/finishCard/model/finish_cart_model.dart';
 import '../../../../../../repositories/payment/model/payment_model.dart';
 import '../../../../../../repositories/payment/payment_repository.dart';
 import '../../../../../../repositories/product/model/consult_product_model.dart';
@@ -11,29 +13,31 @@ class FinishCartCubit extends Cubit<FinishCartState> {
   final PaymentRepository paymentRepository;
   final SharedPreferences prefs;
   final CustomerRepository customerRepository;
+  final FinishCartRepository finishCartRepository;
 
   FinishCartCubit({
     required this.paymentRepository,
     required this.prefs,
     required this.customerRepository,
+    required this.finishCartRepository,
   }) : super(FinishCartState.initial()) {
     _init();
   }
 
   void _init() {
-    final login = prefs.getString('userLogin') ?? '';
-    emit(state.copyWith(vendedorLogin: login));
+    final codigo = prefs.getString('userCodigo') ?? '';
+    emit(state.copyWith(vendedorLogin: codigo));
   }
 
   void setCliente(CustomerModel cliente) {
     emit(state.copyWith(cliente: cliente));
   }
 
-  void setCondicaoPagamento(PaymentModel pagamento) {
+  void setCondicaoPagamento(CondicaoPagamentoModel pagamento) {
     emit(state.copyWith(condicaoPagamento: pagamento));
   }
 
-  void setTipoPagamento(PaymentModel pagamento) {
+  void setTipoPagamento(TipoPagamentoModel pagamento) {
     emit(state.copyWith(tipoPagamento: pagamento));
   }
 
@@ -42,17 +46,13 @@ class FinishCartCubit extends Cubit<FinishCartState> {
   }
 
   void setProdutos(List<ConsultProductModel> itens) {
-    final novoTotal = itens.fold<double>(
-      0,
-          (sum, p) => sum + (double.tryParse(p.preco.replaceAll(',', '.')) ?? 0) * p.quantidade,
-    );
-
-    emit(state.copyWith(produtos: itens, total: novoTotal));
+    final agrupados = _agruparProdutos(itens);
+    emit(state.copyWith(produtos: agrupados));
   }
 
   void addProduto(ConsultProductModel produto) {
-    final index = state.produtos.indexWhere((p) => p.codigo == produto.codigo);
     final novaLista = List<ConsultProductModel>.from(state.produtos);
+    final index = novaLista.indexWhere((p) => p.codigo == produto.codigo);
 
     if (index >= 0) {
       novaLista[index].quantidade += produto.quantidade > 0 ? produto.quantidade : 1;
@@ -61,31 +61,40 @@ class FinishCartCubit extends Cubit<FinishCartState> {
       novaLista.add(produto);
     }
 
-    final novoTotal = novaLista.fold<double>(
-      0,
-          (sum, item) => sum + (double.tryParse(item.preco.replaceAll(',', '.')) ?? 0) * item.quantidade,
-    );
-
-    emit(state.copyWith(produtos: novaLista, total: novoTotal));
+    emit(state.copyWith(produtos: _agruparProdutos(novaLista)));
   }
 
-  Future<List<PaymentModel>> fetchCondicoesPagamento() async {
+  List<ConsultProductModel> _agruparProdutos(List<ConsultProductModel> produtos) {
+    final Map<String, ConsultProductModel> map = {};
+
+    for (var p in produtos) {
+      if (map.containsKey(p.codigo)) {
+        map[p.codigo]!.quantidade += p.quantidade;
+      } else {
+        map[p.codigo] = ConsultProductModel(
+          codigo: p.codigo,
+          produto: p.produto,
+          preco: p.preco,
+          estoque: p.estoque,
+          imagem: p.imagem,
+          quantidade: p.quantidade,
+        );
+      }
+    }
+
+    return map.values.toList();
+  }
+
+  Future<List<CondicaoPagamentoModel>> fetchCondicoesPagamento() async {
     return await paymentRepository.getCondicoesPagamento();
   }
 
-  Future<List<PaymentModel>> fetchTiposPagamento() async {
+  Future<List<TipoPagamentoModel>> fetchTiposPagamento() async {
     return await paymentRepository.getTiposPagamento();
   }
 
   void resetarCampos() {
     emit(FinishCartState.initial().copyWith(vendedorLogin: state.vendedorLogin));
-  }
-
-  void loadInitialData(String vendedorLogin) {
-    emit(state.copyWith(
-      vendedorLogin: vendedorLogin,
-      status: FinishCartStatus.initial,
-    ));
   }
 
   Future<List<CustomerModel>> fetchClientes() async {
@@ -95,6 +104,47 @@ class FinishCartCubit extends Cubit<FinishCartState> {
     } catch (e) {
       emit(state.copyWith(status: FinishCartStatus.error, errorMessage: e.toString()));
       return [];
+    }
+  }
+
+  Future<bool> enviarPedido(double desconto) async {
+    emit(state.copyWith(status: FinishCartStatus.loading));
+
+    try {
+      final totalComDesconto = state.total - desconto;
+      final pedido = FinishCartModel(
+        idEmpresa: "1",
+        numPed: "",
+        idVendedor: state.vendedorLogin,
+        idCliente: state.cliente?.codigo ?? "",
+        idTpPag: state.tipoPagamento?.codigo ?? "",
+        idCondPag: state.condicaoPagamento?.codigo ?? "",
+        valDesc: desconto,
+        obsPed: state.obs,
+        totalPed: totalComDesconto,
+        produtos: state.produtos
+            .map((p) => FinishCartProdutoModel(
+          idProduto: p.codigo,
+          quantidade: p.quantidade,
+          preco: double.tryParse(p.preco.replaceAll(',', '.')) ?? 0,
+        ))
+            .toList(),
+      );
+
+      final sucesso = await finishCartRepository.enviarPedido(pedido);
+
+      if (sucesso) {
+        emit(state.copyWith(status: FinishCartStatus.success));
+        return true;
+      } else {
+        emit(state.copyWith(
+            status: FinishCartStatus.error,
+            errorMessage: "Falha ao enviar pedido"));
+        return false;
+      }
+    } catch (e) {
+      emit(state.copyWith(status: FinishCartStatus.error, errorMessage: e.toString()));
+      return false;
     }
   }
 }

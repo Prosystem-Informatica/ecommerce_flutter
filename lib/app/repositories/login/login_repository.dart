@@ -19,7 +19,7 @@ class LoginRepository implements ILoginRepository {
       prefs = await SharedPreferences.getInstance();
 
       var url =
-          'https://prosystem.dyndns-work.com:9090/datasnap/rest/TserverAPPnfe/LoginEmpresa/10329033000133';
+          'http://prosystem.dyndns-work.com:9090/datasnap/rest/TserverAPPnfe/LoginEmpresa/10329033000133';
       var response = await http.get(Uri.parse(url));
 
       var jsonData = jsonDecode(response.body);
