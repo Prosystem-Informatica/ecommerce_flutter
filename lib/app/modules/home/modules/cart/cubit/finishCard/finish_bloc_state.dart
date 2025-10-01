@@ -19,6 +19,7 @@ class FinishCartState extends Equatable {
   final double total;
   final FinishCartStatus status;
   final String? errorMessage;
+  final String? successMessage;
 
   const FinishCartState({
     required this.produtos,
@@ -30,6 +31,7 @@ class FinishCartState extends Equatable {
     this.total = 0.0,
     this.status = FinishCartStatus.initial,
     this.errorMessage,
+    this.successMessage,
   });
 
   factory FinishCartState.initial() {
@@ -43,6 +45,7 @@ class FinishCartState extends Equatable {
       total: 0.0,
       status: FinishCartStatus.initial,
       errorMessage: null,
+      successMessage: null,
     );
   }
 
@@ -56,6 +59,7 @@ class FinishCartState extends Equatable {
     double? total,
     FinishCartStatus? status,
     String? errorMessage,
+    String? successMessage,
   }) {
     return FinishCartState(
       produtos: produtos ?? this.produtos,
@@ -67,6 +71,7 @@ class FinishCartState extends Equatable {
       total: total ?? _calculaTotal(produtos ?? this.produtos),
       status: status ?? this.status,
       errorMessage: errorMessage ?? this.errorMessage,
+      successMessage: successMessage ?? this.successMessage,
     );
   }
 

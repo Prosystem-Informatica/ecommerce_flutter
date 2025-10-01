@@ -5,7 +5,7 @@ import 'model/consult_product_model.dart';
 
 class ConsultProductRepository implements IConsultProductRepository {
   final String baseUrl = 'http://prosystem04.dyndns-work.com/datasnap/rest/TServerAPPecf';
-  final String imageBaseUrl = 'http://prosystem04.dyndns-work.com/FotosGimenes';
+  final String imageBaseUrl = 'http://prosystem04.dyndns-work.com/Fotos';
 
   @override
   Future<List<ConsultProductModel>> getProducts() async {
@@ -18,14 +18,18 @@ class ConsultProductRepository implements IConsultProductRepository {
 
       return data.map((json) {
         final product = ConsultProductModel.fromJson(json);
+        print('Imagem URL: $imageBaseUrl/${Uri.encodeComponent(product.codigo)}-PRODUTO.jpg');
+
         return ConsultProductModel(
           codigo: product.codigo,
           produto: product.produto,
           preco: product.preco,
           estoque: product.estoque,
           imagem: '$imageBaseUrl/${product.codigo}-PRODUTO.jpg',
+
         );
       }).toList();
+
     } else {
       throw Exception('Erro ao carregar produtos: ${response.statusCode}');
     }

@@ -1,13 +1,25 @@
 class FinishCartProdutoModel {
   final String idProduto;
   final int quantidade;
-  final double preco;
+  final String preco;
 
   FinishCartProdutoModel({
     required this.idProduto,
     required this.quantidade,
     required this.preco,
   });
+
+  FinishCartProdutoModel copyWith({
+    String? idProduto,
+    int? quantidade,
+    String? preco,
+  }) {
+    return FinishCartProdutoModel(
+      idProduto: idProduto ?? this.idProduto,
+      quantidade: quantidade ?? this.quantidade,
+      preco: preco ?? this.preco,
+    );
+  }
 }
 
 class FinishCartModel {
@@ -17,9 +29,9 @@ class FinishCartModel {
   final String idCliente;
   final String idTpPag;
   final String idCondPag;
-  final double valDesc;
+  final String valDesc;
   final String obsPed;
-  final double totalPed;
+  final String totalPed;
   final List<FinishCartProdutoModel> produtos;
 
   FinishCartModel({
@@ -42,9 +54,9 @@ class FinishCartModel {
     String? idCliente,
     String? idTpPag,
     String? idCondPag,
-    double? valDesc,
+    String? valDesc,
     String? obsPed,
-    double? totalPed,
+    String? totalPed,
     List<FinishCartProdutoModel>? produtos,
   }) {
     return FinishCartModel(

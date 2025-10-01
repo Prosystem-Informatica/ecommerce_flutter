@@ -50,54 +50,63 @@ class _LoginPageState extends State<LoginPage> with Messages<LoginPage> {
       builder: (context, state) {
         return Scaffold(
           appBar: AppBar(title: const Text("Login")),
-          backgroundColor: Colors.white,
-          body: SafeArea(
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 30,
-                ),
-                child: Column(
-                  children: [
-                    Image.asset("assets/logo-pro.png"),
-                    const SizedBox(height: 10),
-                    buildInput('Login*', controller: loginController),
-                    const SizedBox(height: 10),
-                    buildInput(
-                      'Senha*',
-                      obscureText: true,
-                      controller: senhaController,
-                    ),
-                    const SizedBox(height: 20),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: colorScheme.primary,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                        ),
-                        onPressed: () async {
-                          await context.read<LoginBlocCubit>().login(
-                            loginController.text,
-                            senhaController.text,
-                          );
-                        },
-                        child: Text(
-                          'LOGIN',
-                          style: TextStyle(color: colorScheme.onPrimary),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Text(
-                      "Versão • 1.0.0",
-                      style: TextStyle(color: colorScheme.surface),
-                    ),
-                  ],
+          body: Stack(
+            children: [
+              SizedBox.expand(
+                child: Image.asset(
+                  "assets/bg-login.jpg",
+                  fit: BoxFit.cover,
                 ),
               ),
-            ),
+              SafeArea(
+                child: Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 30,
+                    ),
+                    child: Column(
+                      children: [
+                        Image.asset("assets/logo-pro.png"),
+                        const SizedBox(height: 10),
+                        buildInput('Login*', controller: loginController),
+                        const SizedBox(height: 10),
+                        buildInput(
+                          'Senha*',
+                          obscureText: true,
+                          controller: senhaController,
+                        ),
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: colorScheme.primary,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                            ),
+                            onPressed: () async {
+                              await context.read<LoginBlocCubit>().login(
+                                loginController.text,
+                                senhaController.text,
+                              );
+                            },
+                            child: Text(
+                              'LOGIN',
+                              style: TextStyle(color: colorScheme.onPrimary),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          "Versão • 1.0.0",
+                          style: TextStyle(color: colorScheme.surface),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         );
       },

@@ -21,7 +21,7 @@ class ConsultProductModel {
       produto: json['PRODUTO']?.toString() ?? '',
       preco: json['PRECO']?.toString() ?? '0',
       estoque: json['ESTOQUE']?.toString() ?? '0',
-      imagem: json['IMAGEM']?.toString() ?? '',
+      imagem: '',
       quantidade: json['QUANTIDADE'] != null
           ? int.tryParse(json['QUANTIDADE'].toString()) ?? 0
           : 0,

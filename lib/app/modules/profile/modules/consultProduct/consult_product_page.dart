@@ -19,108 +19,136 @@ class _ConsultProductPageState extends State<ConsultProductPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text('Consultar Produtos'),
-      ),
-      body: Column(
+      appBar: AppBar(title: const Text('Consultar Produtos')),
+      body: Stack(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: searchController,
-                    decoration: InputDecoration(
-                      labelText: 'Buscar produtos...',
-                      border: const OutlineInputBorder(),
-                      suffixIcon: searchQuery.isNotEmpty
-                          ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
+          Positioned.fill(
+            child: Image.asset('assets/bg-login.jpg', fit: BoxFit.cover),
+          ),
+          Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: searchController,
+                        decoration: InputDecoration(
+                          labelText: 'Buscar produtos...',
+                          border: OutlineInputBorder(
+                            borderSide: const BorderSide(color: Colors.blue),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: const BorderSide(color: Colors.blue),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: const BorderSide(
+                              color: Colors.blue,
+                              width: 2,
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          suffixIcon:
+                              searchQuery.isNotEmpty
+                                  ? IconButton(
+                                    icon: const Icon(Icons.clear),
+                                    onPressed: () {
+                                      setState(() {
+                                        searchController.clear();
+                                        searchQuery = '';
+                                      });
+                                    },
+                                  )
+                                  : null,
+                          fillColor: Colors.white.withOpacity(0.8),
+                          filled: true,
+                        ),
+                        onChanged: (value) {
                           setState(() {
-                            searchController.clear();
-                            searchQuery = '';
+                            searchQuery = value;
                           });
                         },
-                      )
-                          : null,
+                      ),
                     ),
-                    onChanged: (value) {
-                      setState(() {
-                        searchQuery = value;
-                      });
-                    },
-                  ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: Icon(
+                        isGridView ? Icons.view_list : Icons.grid_view,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          isGridView = !isGridView;
+                        });
+                      },
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                IconButton(
-                  icon: Icon(isGridView ? Icons.view_list : Icons.grid_view),
-                  onPressed: () {
-                    setState(() {
-                      isGridView = !isGridView;
-                    });
+              ),
+              Expanded(
+                child: BlocBuilder<
+                  ConsultProductBlocCubit,
+                  ConsultProductBlocState
+                >(
+                  builder: (context, state) {
+                    if (state.status == ConsultProductStateStatus.loading) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    if (state.status == ConsultProductStateStatus.error) {
+                      return Center(
+                        child: Text(state.errorMessage ?? 'Erro desconhecido'),
+                      );
+                    }
+
+                    final filteredProducts =
+                        (state.products ?? []).where((p) {
+                          return p.produto.toLowerCase().contains(
+                                searchQuery.toLowerCase(),
+                              ) ||
+                              p.codigo.toLowerCase().contains(
+                                searchQuery.toLowerCase(),
+                              );
+                        }).toList();
+
+                    if (filteredProducts.isEmpty) {
+                      return const Center(
+                        child: Text('Nenhum produto encontrado'),
+                      );
+                    }
+
+                    if (isGridView) {
+                      return GridView.builder(
+                        padding: const EdgeInsets.all(12),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              childAspectRatio: 0.75,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
+                            ),
+                        itemCount: filteredProducts.length,
+                        itemBuilder: (context, index) {
+                          final product = filteredProducts[index];
+                          return ProductCard(product: product);
+                        },
+                      );
+                    } else {
+                      return ListView.builder(
+                        padding: const EdgeInsets.all(12),
+                        itemCount: filteredProducts.length,
+                        itemBuilder: (context, index) {
+                          final product = filteredProducts[index];
+                          return ProductCard(product: product, isGrid: false);
+                        },
+                      );
+                    }
                   },
                 ),
-              ],
-            ),
-          ),
-
-          Expanded(
-            child: BlocBuilder<ConsultProductBlocCubit, ConsultProductBlocState>(
-              builder: (context, state) {
-                if (state.status == ConsultProductStateStatus.loading) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (state.status == ConsultProductStateStatus.error) {
-                  return Center(
-                    child: Text(state.errorMessage ?? 'Erro desconhecido'),
-                  );
-                }
-
-                final filteredProducts = (state.products ?? []).where((p) {
-                  return p.produto.toLowerCase().contains(searchQuery.toLowerCase()) ||
-                      p.codigo.toLowerCase().contains(searchQuery.toLowerCase());
-                }).toList();
-
-                if (filteredProducts.isEmpty) {
-                  return const Center(child: Text('Nenhum produto encontrado'));
-                }
-
-                if (isGridView) {
-                  return GridView.builder(
-                    padding: const EdgeInsets.all(12),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 0.75,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                    ),
-                    itemCount: filteredProducts.length,
-                    itemBuilder: (context, index) {
-                      final product = filteredProducts[index];
-                      return ProductCard(
-                        product: product,
-                      );
-                    },
-                  );
-                } else {
-                  return ListView.builder(
-                    padding: const EdgeInsets.all(12),
-                    itemCount: filteredProducts.length,
-                    itemBuilder: (context, index) {
-                      final product = filteredProducts[index];
-                      return ProductCard(
-                        product: product,
-                        isGrid: false,
-                      );
-                    },
-                  );
-                }
-              },
-            ),
+              ),
+            ],
           ),
         ],
       ),
@@ -132,71 +160,96 @@ class ProductCard extends StatelessWidget {
   final ConsultProductModel product;
   final bool isGrid;
 
-  const ProductCard({
-    super.key,
-    required this.product,
-    this.isGrid = true,
-  });
+  const ProductCard({super.key, required this.product, this.isGrid = true});
 
   @override
   Widget build(BuildContext context) {
+    final cardColor = Colors.lightBlue[50];
+
     return isGrid
         ? Card(
-      elevation: 2,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Image.network(
-              product.imagem,
-              width: double.infinity,
+          color: cardColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          elevation: 3,
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Image.network(
+                  product.imagem.isNotEmpty
+                      ? product.imagem
+                      : 'assets/no-image.jpeg',
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder:
+                      (_, __, ___) => Image.asset(
+                        'assets/no-image.jpeg',
+                        fit: BoxFit.cover,
+                      ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(
+                  product.produto,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: Colors.black87,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: Text(
+                  'R\$ ${product.preco} • Estoque: ${product.estoque}',
+                  style: const TextStyle(fontSize: 12, color: Colors.black87),
+                ),
+              ),
+              const SizedBox(height: 6),
+            ],
+          ),
+        )
+        : Card(
+          color: cardColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          elevation: 6,
+          child: ListTile(
+            tileColor: cardColor,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            contentPadding: const EdgeInsets.all(15),
+            leading: Image.network(
+              product.imagem.isNotEmpty
+                  ? product.imagem
+                  : 'assets/no-image.jpeg',
+              width: 50,
+              height: 50,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Image.asset(
-                'assets/no-image.jpeg',
-                fit: BoxFit.cover,
-              ),
+              errorBuilder:
+                  (_, __, ___) => Image.asset(
+                    'assets/no-image.jpeg',
+                    width: 50,
+                    height: 50,
+                  ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Text(
+            title: Text(
               product.produto,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: Colors.black87),
+            ),
+            subtitle: Text(
+              'Código: ${product.codigo} • R\$ ${product.preco} • Estoque: ${product.estoque}',
+              style: const TextStyle(color: Colors.black87),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: Text(
-              'R\$ ${product.preco} • Estoque: ${product.estoque}',
-              style: const TextStyle(fontSize: 12),
-            ),
-          ),
-          const SizedBox(height: 6),
-        ],
-      ),
-    )
-        : ListTile(
-      leading: Image.network(
-        product.imagem,
-        width: 50,
-        height: 50,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => Image.asset(
-          'assets/no-image.jpeg',
-          width: 50,
-          height: 50,
-          fit: BoxFit.cover,
-        ),
-      ),
-      title: Text(product.produto),
-      subtitle: Text(
-        'Código: ${product.codigo} • R\$ ${product.preco} • Estoque: ${product.estoque}',
-      ),
-    );
+        );
   }
 }

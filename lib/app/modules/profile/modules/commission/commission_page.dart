@@ -4,8 +4,6 @@ import 'package:intl/intl.dart';
 import 'cubit/commission_bloc_cubit.dart';
 import 'cubit/commission_bloc_state.dart';
 
-import '../../../../repositories/commission/model/commission_model.dart';
-
 class CommissionPage extends StatefulWidget {
   const CommissionPage({super.key});
 
@@ -58,102 +56,142 @@ class _CommissionPageState extends State<CommissionPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Comissões'),
-      ),
-      body: Column(
+      appBar: AppBar(title: const Text('Comissões')),
+      body: Stack(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => _pickDate(isStart: true),
-                    child: Text(
-                      "Início: ${DateFormat('dd/MM/yyyy').format(startDate)}",
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => _pickDate(isStart: false),
-                    child: Text(
-                      "Fim: ${DateFormat('dd/MM/yyyy').format(endDate)}",
-                    ),
-                  ),
-                ),
-              ],
+          Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/bg-login.jpg'),
+                fit: BoxFit.cover,
+              ),
             ),
           ),
-          Expanded(
-            child: BlocBuilder<CommissionBlocCubit, CommissionState>(
-              builder: (context, state) {
-                if (state.status == CommissionBlocStatus.loading) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (state.status == CommissionBlocStatus.error) {
-                  return Center(
-                    child: Text(state.errorMessage ?? 'Erro ao carregar'),
-                  );
-                }
-                final hasNoData = state.commissions.length == 1 &&
-                    state.commissions[0].data.contains('Não existem pedidos');
-
-                if (hasNoData) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Text(
-                        'Nenhuma comissão encontrada para este período',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey[600],
-                          fontWeight: FontWeight.w500,
+          Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => _pickDate(isStart: true),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(
+                            color: Theme.of(context).colorScheme.primary,
+                            width: 2,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(25),
+                          ),
+                        ),
+                        child: Text(
+                          "Início: ${DateFormat('dd/MM/yyyy').format(startDate)}",
                         ),
                       ),
                     ),
-                  );
-                }
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => _pickDate(isStart: false),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(
+                            color: Theme.of(context).colorScheme.primary,
+                            width: 2,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(25),
+                          ),
+                        ),
+                        child: Text(
+                          "Fim: ${DateFormat('dd/MM/yyyy').format(endDate)}",
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: BlocBuilder<CommissionBlocCubit, CommissionState>(
+                  builder: (context, state) {
+                    if (state.status == CommissionBlocStatus.loading) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
 
-                return ListView.builder(
-                  itemCount: state.commissions.length,
-                  itemBuilder: (context, index) {
-                    final commission = state.commissions[index];
-                    return _CommissionCard(commission: commission);
+                    if (state.status == CommissionBlocStatus.error) {
+                      return Center(
+                        child: Text(state.errorMessage ?? 'Erro ao carregar'),
+                      );
+                    }
+
+                    final hasNoData =
+                        state.commissions.length == 1 &&
+                        state.commissions[0].data.contains(
+                          'Não existem pedidos',
+                        );
+
+                    if (hasNoData) {
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(20.0),
+                          child: Text(
+                            'Nenhuma comissão encontrada para este período',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+
+                    return ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: state.commissions.length,
+                      itemBuilder: (context, index) {
+                        final commission = state.commissions[index];
+                        return Card(
+                          color: Colors.lightBlue[50],
+                          elevation: 3,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          margin: const EdgeInsets.symmetric(vertical: 8),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "Data: ${commission.data}",
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  "Total Pedido: R\$ ${commission.totalPed}",
+                                ),
+                                Text(
+                                  "Total Devolução: R\$ ${commission.totalDev}",
+                                ),
+                                Text(
+                                  "Total Comissão: R\$ ${commission.totalComi}",
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    );
                   },
-                );
-              },
-            ),
+                ),
+              ),
+            ],
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _CommissionCard extends StatelessWidget {
-  final CommissionModel commission;
-
-  const _CommissionCard({required this.commission});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      child: ListTile(
-        title: Text("Data: ${commission.data}"),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("Total Pedido: R\$ ${commission.totalPed}"),
-            Text("Total Devolução: R\$ ${commission.totalDev}"),
-            Text("Total Comissão: R\$ ${commission.totalComi}"),
-          ],
-        ),
       ),
     );
   }

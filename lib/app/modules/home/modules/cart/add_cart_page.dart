@@ -19,7 +19,8 @@ class ProductListPage extends StatefulWidget {
   State<ProductListPage> createState() => _ProductListPageState();
 }
 
-class _ProductListPageState extends State<ProductListPage> with TickerProviderStateMixin {
+class _ProductListPageState extends State<ProductListPage>
+    with TickerProviderStateMixin {
   String searchQuery = '';
   bool isGrid = false;
   List<CartItem> cart = [];
@@ -29,12 +30,16 @@ class _ProductListPageState extends State<ProductListPage> with TickerProviderSt
   void initState() {
     super.initState();
     final cubit = context.read<FinishCartCubit>();
-
-    cart = cubit.state.produtos.map((p) => CartItem(product: p, quantity: p.quantidade)).toList();
+    cart =
+        cubit.state.produtos
+            .map((p) => CartItem(product: p, quantity: p.quantidade))
+            .toList();
   }
 
   void addToCart(ConsultProductModel product) {
-    final index = cart.indexWhere((item) => item.product.codigo == product.codigo);
+    final index = cart.indexWhere(
+          (item) => item.product.codigo == product.codigo,
+    );
     if (index >= 0) {
       setState(() => cart[index].quantity++);
     } else {
@@ -43,7 +48,9 @@ class _ProductListPageState extends State<ProductListPage> with TickerProviderSt
   }
 
   void removeFromCart(ConsultProductModel product) {
-    final index = cart.indexWhere((item) => item.product.codigo == product.codigo);
+    final index = cart.indexWhere(
+          (item) => item.product.codigo == product.codigo,
+    );
     if (index >= 0) {
       setState(() {
         if (cart[index].quantity > 1) {
@@ -55,18 +62,45 @@ class _ProductListPageState extends State<ProductListPage> with TickerProviderSt
     }
   }
 
+  void addToCartWithQuantity(ConsultProductModel product, int quantity) {
+    final index = cart.indexWhere(
+          (item) => item.product.codigo == product.codigo,
+    );
+    if (index >= 0) {
+      setState(() => cart[index].quantity += quantity);
+    } else {
+      setState(() => cart.add(CartItem(product: product, quantity: quantity)));
+    }
+  }
+
+  int get totalItems =>
+      cart.fold(0, (sum, item) => sum + item.quantity);
+
+  double get totalPrice =>
+      cart.fold(0.0, (sum, item) {
+        final price = double.tryParse(item.product.preco.replaceAll(',', '.')) ?? 0.0;
+        return sum + price * item.quantity;
+      });
+
   void _openCartModal() async {
     final cubit = context.read<FinishCartCubit>();
 
-    final selectedProducts = await showModalBottomSheet<List<ConsultProductModel>>(
+    final selectedProducts = await showModalBottomSheet<
+        List<ConsultProductModel>
+    >(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (_) {
         return StatefulBuilder(
           builder: (context, setModalState) {
             return Container(
               constraints: BoxConstraints(
-                  maxHeight: MediaQuery.of(context).size.height * 0.6),
+                maxHeight: MediaQuery.of(context).size.height * 0.6,
+              ),
               padding: const EdgeInsets.all(16),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -76,17 +110,23 @@ class _ProductListPageState extends State<ProductListPage> with TickerProviderSt
                     children: [
                       const Text(
                         "Carrinho",
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       IconButton(
                         icon: const Icon(Icons.close),
-                        onPressed: () => Navigator.pop(context, <ConsultProductModel>[]),
+                        onPressed:
+                            () =>
+                            Navigator.pop(context, <ConsultProductModel>[]),
                       ),
                     ],
                   ),
                   const Divider(),
                   Expanded(
-                    child: cart.isEmpty
+                    child:
+                    cart.isEmpty
                         ? const Center(child: Text('Carrinho vazio'))
                         : ListView.builder(
                       itemCount: cart.length,
@@ -98,28 +138,36 @@ class _ProductListPageState extends State<ProductListPage> with TickerProviderSt
                             width: 40,
                             height: 40,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) =>
+                            errorBuilder:
+                                (_, __, ___) =>
                                 Image.asset('assets/no-image.jpeg'),
                           ),
                           title: Text(item.product.produto),
                           subtitle: Text(
-                              "Qtd: ${item.quantity} • R\$ ${item.product.preco}"),
+                            "Qtd: ${item.quantity} • R\$ ${item.product.preco}",
+                          ),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               IconButton(
-                                icon: const Icon(Icons.remove_circle,
-                                    color: Colors.red),
+                                icon: const Icon(
+                                  Icons.remove_circle,
+                                  color: Colors.red,
+                                ),
                                 onPressed: () {
                                   removeFromCart(item.product);
                                   setModalState(() {});
                                 },
                               ),
-                              Text('${item.quantity}',
-                                  style: const TextStyle(fontSize: 16)),
+                              Text(
+                                '${item.quantity}',
+                                style: const TextStyle(fontSize: 16),
+                              ),
                               IconButton(
-                                icon: const Icon(Icons.add_circle,
-                                    color: Colors.green),
+                                icon: const Icon(
+                                  Icons.add_circle,
+                                  color: Colors.green,
+                                ),
                                 onPressed: () {
                                   addToCart(item.product);
                                   setModalState(() {});
@@ -132,19 +180,30 @@ class _ProductListPageState extends State<ProductListPage> with TickerProviderSt
                     ),
                   ),
                   const SizedBox(height: 10),
+                  Text(
+                    "Total: R\$ ${totalPrice.toStringAsFixed(2).replaceAll('.', ',')}",
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
                   Center(
                     child: ElevatedButton.icon(
                       onPressed: () {
-                        final productsToAdd = cart.map((e) {
+                        final productsToAdd =
+                        cart.map((e) {
                           e.product.quantidade = e.quantity;
                           return e.product;
                         }).toList();
-
                         cubit.setProdutos(productsToAdd);
                         Navigator.pop(context, productsToAdd);
                       },
                       icon: const Icon(Icons.check),
-                      label: const Text("Adicionar"),
+                      label: const Text(
+                        "Adicionar",
+                        style: TextStyle(color: Colors.white),
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green,
                         foregroundColor: Colors.white,
@@ -168,138 +227,372 @@ class _ProductListPageState extends State<ProductListPage> with TickerProviderSt
     }
   }
 
+  void _openProductModal(ConsultProductModel product) {
+    int quantity = 1;
+    final TextEditingController quantityController = TextEditingController(
+      text: quantity.toString(),
+    );
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateModal) {
+            double preco =
+                double.tryParse(product.preco.replaceAll(',', '.')) ?? 0.0;
+
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: SizedBox(
+                height: MediaQuery.of(context).size.height * 0.5,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
+                    ),
+                    Image.network(
+                      product.imagem,
+                      height: 150,
+                      fit: BoxFit.contain,
+                      errorBuilder:
+                          (_, __, ___) =>
+                          Image.asset('assets/no-image.jpeg', height: 150),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      product.produto,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      "Código: ${product.codigo}",
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        IconButton(
+                          onPressed: () {
+                            if (quantity > 1) {
+                              setStateModal(() {
+                                quantity--;
+                                quantityController.text = quantity.toString();
+                              });
+                            }
+                          },
+                          icon: const Icon(
+                            Icons.remove_circle,
+                            color: Colors.red,
+                          ),
+                        ),
+                        SizedBox(
+                          width: 60,
+                          child: TextField(
+                            controller: quantityController,
+                            textAlign: TextAlign.center,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                              isDense: true,
+                              contentPadding: EdgeInsets.symmetric(
+                                vertical: 8,
+                                horizontal: 4,
+                              ),
+                            ),
+                            onTap: () {
+                              quantityController.selection = TextSelection(
+                                baseOffset: 0,
+                                extentOffset: quantityController.text.length,
+                              );
+                            },
+                            onChanged: (value) {
+                              int? val = int.tryParse(value);
+                              if (val != null && val > 0) {
+                                setStateModal(() => quantity = val);
+                              } else {
+                                setStateModal(() => quantity = 1);
+                                quantityController.text = '1';
+                              }
+                            },
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () {
+                            setStateModal(() {
+                              quantity++;
+                              quantityController.text = quantity.toString();
+                            });
+                          },
+                          icon: const Icon(
+                            Icons.add_circle,
+                            color: Colors.green,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      "Total: R\$ ${(preco * quantity).toStringAsFixed(2).replaceAll('.', ',')}",
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: () {
+                        addToCartWithQuantity(product, quantity);
+                        Navigator.pop(context);
+                      },
+                      child: const Text(
+                        "Ok",
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        minimumSize: const Size(120, 40),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
       appBar: AppBar(
         title: const Text('Selecionar Produtos'),
         actions: [
           IconButton(
             icon: Icon(isGrid ? Icons.list : Icons.grid_view),
             onPressed: () => setState(() => isGrid = !isGrid),
-          )
+          ),
         ],
       ),
-      body: Column(
+      body: Stack(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(8),
-            child: TextField(
-              decoration: InputDecoration(
-                labelText: 'Buscar por código ou nome...',
-                border: const OutlineInputBorder(),
-                suffixIcon: searchQuery.isNotEmpty
-                    ? IconButton(
-                  icon: const Icon(Icons.clear),
-                  onPressed: () => setState(() => searchQuery = ''),
-                )
-                    : null,
-              ),
-              onChanged: (value) => setState(() => searchQuery = value),
-            ),
+          Positioned.fill(
+            child: Image.asset('assets/bg-login.jpg', fit: BoxFit.cover),
           ),
-          Expanded(
-            child: BlocBuilder<ConsultProductBlocCubit, ConsultProductBlocState>(
-              builder: (context, state) {
-                if (state.status == ConsultProductStateStatus.loading) {
-                  return const Center(child: CircularProgressIndicator());
-                }
+          Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(8),
+                child: TextField(
+                  decoration: InputDecoration(
+                    labelText: 'Buscar por código ou nome...',
+                    border: const OutlineInputBorder(),
+                    filled: true,
+                    fillColor: Colors.white,
+                    suffixIcon:
+                    searchQuery.isNotEmpty
+                        ? IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () => setState(() => searchQuery = ''),
+                    )
+                        : null,
+                  ),
+                  onChanged: (value) => setState(() => searchQuery = value),
+                ),
+              ),
+              Expanded(
+                child: BlocBuilder<
+                    ConsultProductBlocCubit,
+                    ConsultProductBlocState
+                >(
+                  builder: (context, state) {
+                    if (state.status == ConsultProductStateStatus.loading) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
 
-                if (state.status == ConsultProductStateStatus.error) {
-                  return Center(child: Text(state.errorMessage ?? 'Erro desconhecido'));
-                }
-
-                final products = (state.products ?? [])
-                    .where((p) =>
-                p.produto.toLowerCase().contains(searchQuery.toLowerCase()) ||
-                    p.codigo.toLowerCase().contains(searchQuery.toLowerCase()))
-                    .toList();
-
-                if (products.isEmpty) {
-                  return const Center(child: Text('Nenhum produto encontrado'));
-                }
-
-                if (isGrid) {
-                  return GridView.builder(
-                    gridDelegate:
-                    const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 0.75,
-                    ),
-                    itemCount: products.length,
-                    itemBuilder: (context, index) {
-                      final product = products[index];
-                      return GestureDetector(
-                        onTap: () => addToCart(product),
-                        child: Card(
-                          child: Column(
-                            children: [
-                              Expanded(
-                                child: Image.network(
-                                  product.imagem,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) =>
-                                      Image.asset('assets/no-image.jpeg'),
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Column(
-                                  children: [
-                                    Text(product.produto,
-                                        textAlign: TextAlign.center),
-                                    Text("R\$ ${product.preco} • Estoque: ${product.estoque}"),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                    if (state.status == ConsultProductStateStatus.error) {
+                      return Center(
+                        child: Text(state.errorMessage ?? 'Erro desconhecido'),
                       );
-                    },
-                  );
-                }
+                    }
 
-                return ListView.builder(
-                  itemCount: products.length,
-                  itemBuilder: (context, index) {
-                    final product = products[index];
-                    return ListTile(
-                      onTap: () => addToCart(product),
-                      leading: Image.network(
-                        product.imagem,
-                        width: 50,
-                        height: 50,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) =>
-                            Image.asset('assets/no-image.jpeg'),
-                      ),
-                      title: Text(product.produto),
-                      subtitle: Text(
-                          "Código: ${product.codigo} • R\$ ${product.preco} • Estoque: ${product.estoque}"),
+                    final products =
+                    (state.products ?? [])
+                        .where(
+                          (p) =>
+                      p.produto.toLowerCase().contains(
+                        searchQuery.toLowerCase(),
+                      ) ||
+                          p.codigo.toLowerCase().contains(
+                            searchQuery.toLowerCase(),
+                          ),
+                    )
+                        .toList();
+
+                    if (products.isEmpty) {
+                      return const Center(
+                        child: Text('Nenhum produto encontrado'),
+                      );
+                    }
+
+                    if (isGrid) {
+                      return GridView.builder(
+                        gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          childAspectRatio: 0.75,
+                        ),
+                        itemCount: products.length,
+                        itemBuilder: (context, index) {
+                          final product = products[index];
+                          return GestureDetector(
+                            onTap: () => _openProductModal(product),
+                            child: Card(
+                              color: Colors.lightBlue[50],
+                              elevation: 3,
+                              child: Column(
+                                children: [
+                                  Expanded(
+                                    child: Image.network(
+                                      product.imagem,
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (_, __, ___) => Image.asset(
+                                        'assets/no-image.jpeg',
+                                      ),
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Column(
+                                      children: [
+                                        Text(
+                                          product.produto,
+                                          textAlign: TextAlign.center,
+                                          style: const TextStyle(
+                                            color: Colors.black,
+                                          ),
+                                        ),
+                                        Text(
+                                          "R\$ ${product.preco} • Estoque: ${product.estoque}",
+                                          style: const TextStyle(
+                                            color: Colors.black,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    }
+
+                    return ListView.builder(
+                      itemCount: products.length,
+                      itemBuilder: (context, index) {
+                        final product = products[index];
+                        return Card(
+                          color: Colors.lightBlue[50],
+                          elevation: 3,
+                          child: ListTile(
+                            onTap: () => _openProductModal(product),
+                            leading: Image.network(
+                              product.imagem,
+                              width: 50,
+                              height: 50,
+                              fit: BoxFit.cover,
+                              errorBuilder:
+                                  (_, __, ___) =>
+                                  Image.asset('assets/no-image.jpeg'),
+                            ),
+                            title: Text(
+                              product.produto,
+                              style: const TextStyle(color: Colors.black),
+                            ),
+                            subtitle: Text(
+                              "Código: ${product.codigo} • R\$ ${product.preco} • Estoque: ${product.estoque}",
+                              style: const TextStyle(color: Colors.black),
+                            ),
+                          ),
+                        );
+                      },
                     );
                   },
-                );
-              },
-            ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
-      bottomNavigationBar: Padding(
+      bottomNavigationBar: Container(
+        color: Colors.transparent,
         padding: const EdgeInsets.all(30),
-        child: ElevatedButton.icon(
-          key: _cartButtonKey,
-          onPressed: _openCartModal,
-          icon: const Icon(Icons.shopping_cart),
-          label: const Text("Carrinho"),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blue,
-            foregroundColor: Colors.white,
-            minimumSize: const Size(120, 40),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            ElevatedButton.icon(
+              key: _cartButtonKey,
+              onPressed: _openCartModal,
+              icon: const Icon(Icons.shopping_cart),
+              label: const Text("Carrinho", style: TextStyle(color: Colors.white)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 40),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                elevation: 5,
+              ),
             ),
-          ),
+            if (totalItems > 0)
+              Positioned(
+                right: 1,
+                top: -10  ,
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    '${cart.length}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );

@@ -2,7 +2,8 @@ import 'package:http/http.dart' as http;
 import 'model/finish_cart_model.dart';
 
 class FinishCartRepository {
-  final String baseUrl = "http://prosystem04.dyndns-work.com/datasnap/rest/TServerAPPecf";
+  final String baseUrl =
+      "http://prosystem04.dyndns-work.com/datasnap/rest/TServerAPPecf";
 
   Future<String> incluirPedido() async {
     final url = Uri.parse("$baseUrl/IncluirPedido");
@@ -20,16 +21,18 @@ class FinishCartRepository {
   }
 
   Future<void> gravaPed1(FinishCartModel pedido, String numPed) async {
-    final descontoStr = pedido.valDesc == 0
-        ? "0"
-        : (pedido.valDesc * 100).toInt().toString();
+    final descontoStr = pedido.valDesc.isEmpty ? "0" : pedido.valDesc;
 
-    final obs = pedido.obsPed.isEmpty ? "-" : Uri.encodeComponent(pedido.obsPed);
+    final obs = pedido.obsPed.isEmpty
+        ? "-"
+        : Uri.encodeComponent(pedido.obsPed);
+
+    final total = pedido.totalPed.isEmpty ? "0,00" : pedido.totalPed;
 
     final url = Uri.parse(
       "$baseUrl/GravaPed1/"
           "${pedido.idEmpresa}/$numPed/${pedido.idVendedor}/${pedido.idCliente}/"
-          "${pedido.idTpPag}/${pedido.idCondPag}/$descontoStr/$obs/${pedido.totalPed.toStringAsFixed(2)}",
+          "${pedido.idTpPag}/${pedido.idCondPag}/$descontoStr/$obs/$total",
     );
 
     print(">>> GravaPed1 URL: $url");
@@ -45,7 +48,7 @@ class FinishCartRepository {
   }
 
   Future<void> gravaPed2(String numPed, FinishCartProdutoModel produto) async {
-    final precoStr = (produto.preco * 100).toInt().toString();
+    final precoStr = produto.preco.isEmpty ? "0,00" : produto.preco;
 
     final url = Uri.parse(
       "$baseUrl/GravaPed2/$numPed/${produto.idProduto}/${produto.quantidade}/$precoStr",

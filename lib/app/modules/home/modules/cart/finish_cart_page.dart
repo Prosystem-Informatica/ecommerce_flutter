@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/ui/helpers/messages.dart';
 import '../../../../repositories/customer/model/customer_model.dart';
 import '../../../../repositories/payment/model/payment_model.dart';
 import '../../../../repositories/product/model/consult_product_model.dart';
@@ -14,18 +15,8 @@ class FinishCartPage extends StatefulWidget {
   State<FinishCartPage> createState() => _FinishCartPageState();
 }
 
-class _FinishCartPageState extends State<FinishCartPage> {
+class _FinishCartPageState extends State<FinishCartPage> with Messages<FinishCartPage> {
   final TextEditingController _descontoController = TextEditingController();
-
-  void showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-        duration: const Duration(seconds: 3),
-      ),
-    );
-  }
 
   bool validateFields(FinishCartState state) {
     if (state.cliente == null) {
@@ -44,11 +35,17 @@ class _FinishCartPageState extends State<FinishCartPage> {
       showError("Selecione o tipo de pagamento.");
       return false;
     }
+    final desconto = double.tryParse(_descontoController.text.replaceAll(',', '.')) ?? 0.0;
+    if (desconto >= state.total) {
+      showError("O desconto não pode ser maior ou igual ao total do pedido.");
+      return false;
+    }
     return true;
   }
 
   double calcularTotalComDesconto(FinishCartState state) {
-    final desconto = double.tryParse(_descontoController.text.replaceAll(',', '.')) ?? 0.0;
+    final desconto =
+        double.tryParse(_descontoController.text.replaceAll(',', '.')) ?? 0.0;
     final total = state.total - desconto;
     return total >= 0 ? total : 0;
   }
@@ -59,210 +56,246 @@ class _FinishCartPageState extends State<FinishCartPage> {
 
     return Scaffold(
       appBar: AppBar(title: const Text("Finalizar Pedido")),
-      body: BlocBuilder<FinishCartCubit, FinishCartState>(
-        builder: (context, state) {
-          final totalComDesconto = calcularTotalComDesconto(state);
+      body: Stack(
+        children: [
+          SizedBox.expand(
+            child: Image.asset('assets/bg-login.jpg', fit: BoxFit.cover),
+          ),
+          BlocConsumer<FinishCartCubit, FinishCartState>(
+            listener: (context, state) {
+              state.status.matchAny(
+                success: () {
+                  showSuccess(state.successMessage ?? "Pedido enviado com sucesso!");
+                  cubit.resetarCampos();
+                  _descontoController.clear();
+                  Navigator.pop(context);
+                },
+                error: () {
+                  showError(state.errorMessage ?? "Erro não informado");
+                },
+                any: () {},
+              );
+            },
+            builder: (context, state) {
+              final totalComDesconto = calcularTotalComDesconto(state);
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextField(
-                  decoration: const InputDecoration(labelText: "Vendedor"),
-                  controller: TextEditingController(text: state.vendedorLogin),
-                  readOnly: true,
-                ),
-                const SizedBox(height: 10),
-
-                GestureDetector(
-                  onTap: () async {
-                    final clientes = await cubit.fetchClientes();
-                    if (!mounted) return;
-                    if (clientes.isEmpty) {
-                      showError("Nenhum cliente encontrado");
-                      return;
-                    }
-                    _showSearch<CustomerModel>(
-                      context: context,
-                      title: "Selecione o Cliente",
-                      items: clientes,
-                      display: (c) => c.cliente,
-                      onSelected: cubit.setCliente,
-                    );
-                  },
-                  child: InputDecorator(
-                    decoration: const InputDecoration(labelText: "Cliente"),
-                    child: Text(state.cliente?.cliente ?? "Selecionar"),
-                  ),
-                ),
-                const SizedBox(height: 10),
-
-                TextField(
-                  decoration: const InputDecoration(labelText: "Observações"),
-                  onChanged: cubit.setObservacao,
-                ),
-                const SizedBox(height: 20),
-
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              return SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      "Produtos",
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    ElevatedButton(
-                      onPressed: () async {
-                        final result = await Navigator.push<List<ConsultProductModel>>(
-                          context,
-                          MaterialPageRoute(builder: (_) => const ProductListPage()),
-                        );
-                        if (result != null) {
-                          cubit.setProdutos(result);
+                    GestureDetector(
+                      onTap: () async {
+                        final clientes = await cubit.fetchClientes();
+                        if (!mounted) return;
+                        if (clientes.isEmpty) {
+                          showError("Nenhum cliente encontrado");
+                          return;
                         }
+                        _showSearch<CustomerModel>(
+                          context: context,
+                          title: "Selecione o Cliente",
+                          items: clientes,
+                          display: (c) => c.cliente,
+                          onSelected: cubit.setCliente,
+                        );
                       },
-                      child: const Text("+ Adicionar"),
+                      child: InputDecorator(
+                        decoration: const InputDecoration(labelText: "Cliente"),
+                        child: Text(state.cliente?.cliente ?? "Selecionar"),
+                      ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 10),
+                    const SizedBox(height: 10),
 
-                state.produtos.isEmpty
-                    ? const Text("Nenhum produto adicionado")
-                    : SizedBox(
-                  height: 200,
-                  child: ListView.builder(
-                    itemCount: state.produtos.length,
-                    itemBuilder: (_, index) {
-                      final p = state.produtos[index];
-                      return Card(
-                        child: ListTile(
-                          title: Text(p.produto),
-                          subtitle: Text(
-                              "Qtd: ${p.quantidade} • Preço: R\$ ${p.preco.replaceAll(',', '.')}"),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(height: 20),
+                    TextField(
+                      decoration: const InputDecoration(labelText: "Observações"),
+                      onChanged: cubit.setObservacao,
+                    ),
+                    const SizedBox(height: 20),
 
-                GestureDetector(
-                  onTap: () async {
-                    final condicoes = await cubit.fetchCondicoesPagamento();
-                    if (!mounted) return;
-                    _showSearch<CondicaoPagamentoModel>(
-                      context: context,
-                      title: "Selecione a Condição de Pagamento",
-                      items: condicoes,
-                      display: (p) => p.descricao ?? "",
-                      onSelected: cubit.setCondicaoPagamento,
-                    );
-                  },
-                  child: InputDecorator(
-                    decoration: const InputDecoration(labelText: "Condição de Pagamento"),
-                    child: Text(state.condicaoPagamento?.descricao ?? "Selecionar"),
-                  ),
-                ),
-                const SizedBox(height: 10),
-
-                GestureDetector(
-                  onTap: () async {
-                    final tipos = await cubit.fetchTiposPagamento();
-                    if (!mounted) return;
-                    _showSearch<TipoPagamentoModel>(
-                      context: context,
-                      title: "Selecione o Tipo de Pagamento",
-                      items: tipos,
-                      display: (p) => p.descricao ?? "",
-                      onSelected: cubit.setTipoPagamento,
-                    );
-                  },
-                  child: InputDecorator(
-                    decoration: const InputDecoration(labelText: "Tipo de Pagamento"),
-                    child: Text(state.tipoPagamento?.descricao ?? "Selecionar"),
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                TextField(
-                  controller: _descontoController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: "Desconto",
-                    prefixText: "R\$ ",
-                  ),
-                  onChanged: (_) {
-                    setState(() {});
-                  },
-                ),
-                const SizedBox(height: 20),
-
-                Card(
-                  margin: const EdgeInsets.symmetric(vertical: 10),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
+                    Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text("Total Pedido",
-                            style: TextStyle(fontWeight: FontWeight.bold)),
-                        Text(
-                          "R\$ ${totalComDesconto.toStringAsFixed(2)}",
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 18),
+                        const Text(
+                          "Produtos",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        ElevatedButton(
+                          onPressed: () async {
+                            final result = await Navigator.push<List<ConsultProductModel>>(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const ProductListPage(),
+                              ),
+                            );
+                            if (result != null) {
+                              cubit.setProdutos(result);
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.lightBlue[50],
+                            foregroundColor: Theme.of(context).colorScheme.primary,
+                            elevation: 3,
+                          ),
+                          child: const Text("+ Adicionar"),
                         ),
                       ],
                     ),
-                  ),
-                ),
+                    const SizedBox(height: 10),
 
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          if (!validateFields(state)) return;
-
-                          final desconto = double.tryParse(_descontoController.text.replaceAll(',', '.')) ?? 0.0;
-                          final sucesso = await cubit.enviarPedido(desconto);
-
-                          if (sucesso) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text("Pedido enviado com sucesso!")),
-                            );
-                            Navigator.pop(context);
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(cubit.state.errorMessage ?? "Erro ao enviar pedido")),
-                            );
-                          }
+                    state.produtos.isEmpty
+                        ? const Text("Nenhum produto adicionado")
+                        : SizedBox(
+                      height: 250,
+                      child: ListView.builder(
+                        itemCount: state.produtos.length,
+                        itemBuilder: (_, index) {
+                          final p = state.produtos[index];
+                          return Card(
+                            color: Colors.lightBlue[50],
+                            child: ListTile(
+                              title: Text(p.produto),
+                              subtitle: Text(
+                                "Qtd: ${p.quantidade} • Preço: R\$ ${p.preco.replaceAll(',', '.')}",
+                              ),
+                              trailing: IconButton(
+                                icon: const Icon(Icons.delete, color: Colors.red),
+                                onPressed: () {
+                                  setState(() {
+                                    cubit.state.produtos.removeAt(index);
+                                  });
+                                  cubit.setProdutos(List.from(cubit.state.produtos));
+                                },
+                              ),
+                            ),
+                          );
                         },
-                        style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            foregroundColor: Colors.white),
-                        child: const Text("Enviar"),
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          cubit.resetarCampos();
-                          Navigator.pop(context);
-                        },
-                        style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                            foregroundColor: Colors.white),
-                        child: const Text("Cancelar"),
+                    const SizedBox(height: 20),
+
+                    GestureDetector(
+                      onTap: () async {
+                        final condicoes = await cubit.fetchCondicoesPagamento();
+                        if (!mounted) return;
+                        _showSearch<CondicaoPagamentoModel>(
+                          context: context,
+                          title: "Selecione a Condição de Pagamento",
+                          items: condicoes,
+                          display: (p) => p.descricao ?? "",
+                          onSelected: cubit.setCondicaoPagamento,
+                        );
+                      },
+                      child: InputDecorator(
+                        decoration: const InputDecoration(labelText: "Condição de Pagamento"),
+                        child: Text(state.condicaoPagamento?.descricao ?? "Selecionar"),
                       ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    GestureDetector(
+                      onTap: () async {
+                        final tipos = await cubit.fetchTiposPagamento();
+                        if (!mounted) return;
+                        _showSearch<TipoPagamentoModel>(
+                          context: context,
+                          title: "Selecione o Tipo de Pagamento",
+                          items: tipos,
+                          display: (p) => p.descricao ?? "",
+                          onSelected: cubit.setTipoPagamento,
+                        );
+                      },
+                      child: InputDecorator(
+                        decoration: const InputDecoration(labelText: "Tipo de Pagamento"),
+                        child: Text(state.tipoPagamento?.descricao ?? "Selecionar"),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    TextField(
+                      controller: _descontoController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: "Desconto",
+                        prefixText: "R\$ ",
+                      ),
+                      onChanged: (_) {
+                        setState(() {});
+                      },
+                    ),
+                    const SizedBox(height: 20),
+
+                    Card(
+                      color: Colors.lightBlue[50],
+                      elevation: 3,
+                      margin: const EdgeInsets.symmetric(vertical: 10),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              "Total Pedido",
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            Text(
+                              "R\$ ${totalComDesconto.toStringAsFixed(2)}",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              if (!validateFields(state)) return;
+
+                              cubit.enviarPedido(
+                                double.tryParse(_descontoController.text.replaceAll(',', '.')) ?? 0.0,
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              foregroundColor: Colors.white,
+                              elevation: 3,
+                            ),
+                            child: const Text("Enviar"),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              cubit.resetarCampos();
+                              _descontoController.clear();
+                              Navigator.pop(context);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red,
+                              foregroundColor: Colors.white,
+                              elevation: 3,
+                            ),
+                            child: const Text("Cancelar"),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
-          );
-        },
+              );
+            },
+          ),
+        ],
       ),
     );
   }

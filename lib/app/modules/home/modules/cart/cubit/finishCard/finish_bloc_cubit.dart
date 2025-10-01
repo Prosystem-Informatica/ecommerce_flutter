@@ -55,7 +55,8 @@ class FinishCartCubit extends Cubit<FinishCartState> {
     final index = novaLista.indexWhere((p) => p.codigo == produto.codigo);
 
     if (index >= 0) {
-      novaLista[index].quantidade += produto.quantidade > 0 ? produto.quantidade : 1;
+      novaLista[index].quantidade +=
+          produto.quantidade > 0 ? produto.quantidade : 1;
     } else {
       produto.quantidade = produto.quantidade > 0 ? produto.quantidade : 1;
       novaLista.add(produto);
@@ -64,7 +65,9 @@ class FinishCartCubit extends Cubit<FinishCartState> {
     emit(state.copyWith(produtos: _agruparProdutos(novaLista)));
   }
 
-  List<ConsultProductModel> _agruparProdutos(List<ConsultProductModel> produtos) {
+  List<ConsultProductModel> _agruparProdutos(
+    List<ConsultProductModel> produtos,
+  ) {
     final Map<String, ConsultProductModel> map = {};
 
     for (var p in produtos) {
@@ -94,7 +97,9 @@ class FinishCartCubit extends Cubit<FinishCartState> {
   }
 
   void resetarCampos() {
-    emit(FinishCartState.initial().copyWith(vendedorLogin: state.vendedorLogin));
+    emit(
+      FinishCartState.initial().copyWith(vendedorLogin: state.vendedorLogin),
+    );
   }
 
   Future<List<CustomerModel>> fetchClientes() async {
@@ -102,7 +107,12 @@ class FinishCartCubit extends Cubit<FinishCartState> {
       final clientes = await customerRepository.getCustomers();
       return clientes;
     } catch (e) {
-      emit(state.copyWith(status: FinishCartStatus.error, errorMessage: e.toString()));
+      emit(
+        state.copyWith(
+          status: FinishCartStatus.error,
+          errorMessage: e.toString(),
+        ),
+      );
       return [];
     }
   }
@@ -111,7 +121,12 @@ class FinishCartCubit extends Cubit<FinishCartState> {
     emit(state.copyWith(status: FinishCartStatus.loading));
 
     try {
+      String formatarValor(double valor) {
+        return valor.toStringAsFixed(2).replaceAll('.', ',');
+      }
+
       final totalComDesconto = state.total - desconto;
+
       final pedido = FinishCartModel(
         idEmpresa: "1",
         numPed: "",
@@ -119,16 +134,19 @@ class FinishCartCubit extends Cubit<FinishCartState> {
         idCliente: state.cliente?.codigo ?? "",
         idTpPag: state.tipoPagamento?.codigo ?? "",
         idCondPag: state.condicaoPagamento?.codigo ?? "",
-        valDesc: desconto,
+        valDesc: formatarValor(desconto),
         obsPed: state.obs,
-        totalPed: totalComDesconto,
-        produtos: state.produtos
-            .map((p) => FinishCartProdutoModel(
-          idProduto: p.codigo,
-          quantidade: p.quantidade,
-          preco: double.tryParse(p.preco.replaceAll(',', '.')) ?? 0,
-        ))
-            .toList(),
+        totalPed: formatarValor(totalComDesconto),
+        produtos:
+            state.produtos.map((p) {
+              return FinishCartProdutoModel(
+                idProduto: p.codigo,
+                quantidade: p.quantidade,
+                preco: formatarValor(
+                  double.tryParse(p.preco.replaceAll(',', '.')) ?? 0,
+                ),
+              );
+            }).toList(),
       );
 
       final sucesso = await finishCartRepository.enviarPedido(pedido);
@@ -137,13 +155,21 @@ class FinishCartCubit extends Cubit<FinishCartState> {
         emit(state.copyWith(status: FinishCartStatus.success));
         return true;
       } else {
-        emit(state.copyWith(
+        emit(
+          state.copyWith(
             status: FinishCartStatus.error,
-            errorMessage: "Falha ao enviar pedido"));
+            errorMessage: "Falha ao enviar pedido",
+          ),
+        );
         return false;
       }
     } catch (e) {
-      emit(state.copyWith(status: FinishCartStatus.error, errorMessage: e.toString()));
+      emit(
+        state.copyWith(
+          status: FinishCartStatus.error,
+          errorMessage: e.toString(),
+        ),
+      );
       return false;
     }
   }

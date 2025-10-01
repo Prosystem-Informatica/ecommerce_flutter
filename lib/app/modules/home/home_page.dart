@@ -35,15 +35,16 @@ class _HomePageState extends State<HomePage> {
     _loadUserLogin();
   }
 
-  String formatCamelCase(String text){
+  String formatCamelCase(String text) {
     if (text.isEmpty) return text;
 
     final words = text.split(' ');
-    return words.map((word){
+    return words.map((word) {
       if (word.isEmpty) return word;
       return word[0].toUpperCase() + word.substring(1).toLowerCase();
     }).join(' ');
   }
+
   Future<void> _loadUserLogin() async {
     final prefs = await SharedPreferences.getInstance();
     final login = prefs.getString('userLogin');
@@ -55,51 +56,62 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = Theme
+        .of(context)
+        .colorScheme;
 
+    return Stack(
+      children: [
+        // Fundo com imagem
+        Positioned.fill(
+          child: Image.asset(
+            "assets/bg-login.jpg", // sua imagem
+            fit: BoxFit.cover,
+          ),
+        ),
 
-    return Scaffold(
-      appBar: AppBar(
-    /*leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: Colors.white),
-        onPressed: () => Get.back(),
-    ),*/
-        title: Text(
-          userLogin != null ? 'Bem-vindo , ${formatCamelCase(userLogin!)}' : 'Bem-vindo',
-        ), actions: [
+        Scaffold(
+          backgroundColor: Colors.transparent,
+          appBar: AppBar(
+            title: Text(
+              userLogin != null
+                  ? 'Bem-vindo , ${formatCamelCase(userLogin!)}'
+                  : 'Bem-vindo',
+            ),
+            backgroundColor: colorScheme.primary,
+          ),
+          floatingActionButton: FloatingActionButton(
+            onPressed: () {
+              Get.toNamed("/finish_cart");
+            },
+            backgroundColor: colorScheme.primary,
+            child: const Icon(Icons.add, color: Colors.white),
+          ),
+          bottomNavigationBar: BottomNavigationBar(
+            currentIndex: _currentIndex,
+            onTap: onTabTapped,
+            fixedColor: colorScheme.primary,
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            type: BottomNavigationBarType.fixed,
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.dashboard),
+                label: 'Dashboard',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.person),
+                label: 'Profile',
+              ),
+            ],
+          ),
+          body: _children[_currentIndex],
+        ),
       ],
-        backgroundColor: colorScheme.primary,
-      ),
-      backgroundColor: colorScheme.onPrimary,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Get.toNamed("/finish_cart");
-        },
-        backgroundColor: colorScheme.primary,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: onTabTapped,
-        fixedColor: colorScheme.primary,
-        backgroundColor: colorScheme.onPrimary,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard),
-            label: 'Dashboard',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
-      ),
-      body: _children[_currentIndex],
     );
   }
 }
-
-class Dashboard extends StatefulWidget {
+  class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
 
   @override
@@ -107,7 +119,7 @@ class Dashboard extends StatefulWidget {
 }
 
 class _DashboardState extends State<Dashboard> {
-  final tabs = ["Pedidos a enviar", "Pedidos em Aberto", "Pedidos Concluídos"];
+  final tabs = ["Pedidos Offline", "Pre Pedidos", "Pedidos"];
 
   @override
   Widget build(BuildContext context) {
@@ -116,7 +128,7 @@ class _DashboardState extends State<Dashboard> {
     return DefaultTabController(
       length: tabs.length,
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         body: SafeArea(
           child: Column(
             children: [
@@ -134,7 +146,7 @@ class _DashboardState extends State<Dashboard> {
                     ),
                     indicatorSize: TabBarIndicatorSize.tab,
                     labelColor: colorScheme.onPrimary,
-                    unselectedLabelColor: colorScheme.shadow,
+                    unselectedLabelColor: Colors.grey[800],
                     dividerColor: Colors.transparent,
                     tabs: tabs.map((title) => Tab(text: title)).toList(),
                   ),
