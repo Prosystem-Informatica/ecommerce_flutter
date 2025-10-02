@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/database/dao/cart/cart_dao.dart';
 import '../../../../core/ui/helpers/messages.dart';
 import '../../../../repositories/customer/model/customer_model.dart';
 import '../../../../repositories/payment/model/payment_model.dart';
@@ -15,8 +16,10 @@ class FinishCartPage extends StatefulWidget {
   State<FinishCartPage> createState() => _FinishCartPageState();
 }
 
-class _FinishCartPageState extends State<FinishCartPage> with Messages<FinishCartPage> {
+class _FinishCartPageState extends State<FinishCartPage>
+    with Messages<FinishCartPage> {
   final TextEditingController _descontoController = TextEditingController();
+  final cartDao = CartDao();
 
   bool validateFields(FinishCartState state) {
     if (state.cliente == null) {
@@ -35,7 +38,8 @@ class _FinishCartPageState extends State<FinishCartPage> with Messages<FinishCar
       showError("Selecione o tipo de pagamento.");
       return false;
     }
-    final desconto = double.tryParse(_descontoController.text.replaceAll(',', '.')) ?? 0.0;
+    final desconto =
+        double.tryParse(_descontoController.text.replaceAll(',', '.')) ?? 0.0;
     if (desconto >= state.total) {
       showError("O desconto não pode ser maior ou igual ao total do pedido.");
       return false;
@@ -65,7 +69,9 @@ class _FinishCartPageState extends State<FinishCartPage> with Messages<FinishCar
             listener: (context, state) {
               state.status.matchAny(
                 success: () {
-                  showSuccess(state.successMessage ?? "Pedido enviado com sucesso!");
+                  showSuccess(
+                    state.successMessage ?? "Pedido enviado com sucesso!",
+                  );
                   cubit.resetarCampos();
                   _descontoController.clear();
                   Navigator.pop(context);
@@ -108,7 +114,9 @@ class _FinishCartPageState extends State<FinishCartPage> with Messages<FinishCar
                     const SizedBox(height: 10),
 
                     TextField(
-                      decoration: const InputDecoration(labelText: "Observações"),
+                      decoration: const InputDecoration(
+                        labelText: "Observações",
+                      ),
                       onChanged: cubit.setObservacao,
                     ),
                     const SizedBox(height: 20),
@@ -125,19 +133,21 @@ class _FinishCartPageState extends State<FinishCartPage> with Messages<FinishCar
                         ),
                         ElevatedButton(
                           onPressed: () async {
-                            final result = await Navigator.push<List<ConsultProductModel>>(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const ProductListPage(),
-                              ),
-                            );
+                            final result =
+                                await Navigator.push<List<ConsultProductModel>>(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const ProductListPage(),
+                                  ),
+                                );
                             if (result != null) {
                               cubit.setProdutos(result);
                             }
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.lightBlue[50],
-                            foregroundColor: Theme.of(context).colorScheme.primary,
+                            foregroundColor:
+                                Theme.of(context).colorScheme.primary,
                             elevation: 3,
                           ),
                           child: const Text("+ Adicionar"),
@@ -149,32 +159,37 @@ class _FinishCartPageState extends State<FinishCartPage> with Messages<FinishCar
                     state.produtos.isEmpty
                         ? const Text("Nenhum produto adicionado")
                         : SizedBox(
-                      height: 250,
-                      child: ListView.builder(
-                        itemCount: state.produtos.length,
-                        itemBuilder: (_, index) {
-                          final p = state.produtos[index];
-                          return Card(
-                            color: Colors.lightBlue[50],
-                            child: ListTile(
-                              title: Text(p.produto),
-                              subtitle: Text(
-                                "Qtd: ${p.quantidade} • Preço: R\$ ${p.preco.replaceAll(',', '.')}",
-                              ),
-                              trailing: IconButton(
-                                icon: const Icon(Icons.delete, color: Colors.red),
-                                onPressed: () {
-                                  setState(() {
-                                    cubit.state.produtos.removeAt(index);
-                                  });
-                                  cubit.setProdutos(List.from(cubit.state.produtos));
-                                },
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
+                          height: 250,
+                          child: ListView.builder(
+                            itemCount: state.produtos.length,
+                            itemBuilder: (_, index) {
+                              final p = state.produtos[index];
+                              return Card(
+                                color: Colors.lightBlue[50],
+                                child: ListTile(
+                                  title: Text(p.produto),
+                                  subtitle: Text(
+                                    "Qtd: ${p.quantidade} • Preço: R\$ ${p.preco.replaceAll(',', '.')}",
+                                  ),
+                                  trailing: IconButton(
+                                    icon: const Icon(
+                                      Icons.delete,
+                                      color: Colors.red,
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        cubit.state.produtos.removeAt(index);
+                                      });
+                                      cubit.setProdutos(
+                                        List.from(cubit.state.produtos),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
                     const SizedBox(height: 20),
 
                     GestureDetector(
@@ -190,8 +205,12 @@ class _FinishCartPageState extends State<FinishCartPage> with Messages<FinishCar
                         );
                       },
                       child: InputDecorator(
-                        decoration: const InputDecoration(labelText: "Condição de Pagamento"),
-                        child: Text(state.condicaoPagamento?.descricao ?? "Selecionar"),
+                        decoration: const InputDecoration(
+                          labelText: "Condição de Pagamento",
+                        ),
+                        child: Text(
+                          state.condicaoPagamento?.descricao ?? "Selecionar",
+                        ),
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -209,8 +228,12 @@ class _FinishCartPageState extends State<FinishCartPage> with Messages<FinishCar
                         );
                       },
                       child: InputDecorator(
-                        decoration: const InputDecoration(labelText: "Tipo de Pagamento"),
-                        child: Text(state.tipoPagamento?.descricao ?? "Selecionar"),
+                        decoration: const InputDecoration(
+                          labelText: "Tipo de Pagamento",
+                        ),
+                        child: Text(
+                          state.tipoPagamento?.descricao ?? "Selecionar",
+                        ),
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -261,7 +284,13 @@ class _FinishCartPageState extends State<FinishCartPage> with Messages<FinishCar
                               if (!validateFields(state)) return;
 
                               cubit.enviarPedido(
-                                double.tryParse(_descontoController.text.replaceAll(',', '.')) ?? 0.0,
+                                double.tryParse(
+                                      _descontoController.text.replaceAll(
+                                        ',',
+                                        '.',
+                                      ),
+                                    ) ??
+                                    0.0,
                               );
                             },
                             style: ElevatedButton.styleFrom(
@@ -315,52 +344,61 @@ class _FinishCartPageState extends State<FinishCartPage> with Messages<FinishCar
 
     await showDialog(
       context: context,
-      builder: (_) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: Text(title),
-          content: SizedBox(
-            width: double.maxFinite,
-            height: 400,
-            child: Column(
-              children: [
-                TextField(
-                  controller: searchController,
-                  decoration: const InputDecoration(
-                    labelText: 'Pesquisar',
-                    prefixIcon: Icon(Icons.search),
+      builder:
+          (_) => StatefulBuilder(
+            builder:
+                (context, setDialogState) => AlertDialog(
+                  title: Text(title),
+                  content: SizedBox(
+                    width: double.maxFinite,
+                    height: 400,
+                    child: Column(
+                      children: [
+                        TextField(
+                          controller: searchController,
+                          decoration: const InputDecoration(
+                            labelText: 'Pesquisar',
+                            prefixIcon: Icon(Icons.search),
+                          ),
+                          onChanged: (value) {
+                            setDialogState(() {
+                              filtered =
+                                  items
+                                      .where(
+                                        (e) => display(e)
+                                            .toLowerCase()
+                                            .contains(value.toLowerCase()),
+                                      )
+                                      .toList();
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 10),
+                        Expanded(
+                          child:
+                              filtered.isEmpty
+                                  ? const Center(
+                                    child: Text("Nenhum item encontrado"),
+                                  )
+                                  : ListView.builder(
+                                    itemCount: filtered.length,
+                                    itemBuilder: (_, index) {
+                                      final item = filtered[index];
+                                      return ListTile(
+                                        title: Text(display(item)),
+                                        onTap: () {
+                                          onSelected(item);
+                                          Navigator.pop(context);
+                                        },
+                                      );
+                                    },
+                                  ),
+                        ),
+                      ],
+                    ),
                   ),
-                  onChanged: (value) {
-                    setDialogState(() {
-                      filtered = items
-                          .where((e) =>
-                          display(e).toLowerCase().contains(value.toLowerCase()))
-                          .toList();
-                    });
-                  },
                 ),
-                const SizedBox(height: 10),
-                Expanded(
-                  child: filtered.isEmpty
-                      ? const Center(child: Text("Nenhum item encontrado"))
-                      : ListView.builder(
-                    itemCount: filtered.length,
-                    itemBuilder: (_, index) {
-                      final item = filtered[index];
-                      return ListTile(
-                        title: Text(display(item)),
-                        onTap: () {
-                          onSelected(item);
-                          Navigator.pop(context);
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
           ),
-        ),
-      ),
     );
   }
 }

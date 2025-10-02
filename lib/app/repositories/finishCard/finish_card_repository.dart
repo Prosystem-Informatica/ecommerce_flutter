@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:http/http.dart' as http;
 import 'model/finish_cart_model.dart';
 
@@ -7,7 +9,7 @@ class FinishCartRepository {
 
   Future<String> incluirPedido() async {
     final url = Uri.parse("$baseUrl/IncluirPedido");
-    print(">>> IncluirPedido URL: $url");
+    log(">>> IncluirPedido URL: $url");
 
     final response = await http.get(url);
 
@@ -23,16 +25,15 @@ class FinishCartRepository {
   Future<void> gravaPed1(FinishCartModel pedido, String numPed) async {
     final descontoStr = pedido.valDesc.isEmpty ? "0" : pedido.valDesc;
 
-    final obs = pedido.obsPed.isEmpty
-        ? "-"
-        : Uri.encodeComponent(pedido.obsPed);
+    final obs =
+        pedido.obsPed.isEmpty ? "-" : Uri.encodeComponent(pedido.obsPed);
 
     final total = pedido.totalPed.isEmpty ? "0,00" : pedido.totalPed;
 
     final url = Uri.parse(
       "$baseUrl/GravaPed1/"
-          "${pedido.idEmpresa}/$numPed/${pedido.idVendedor}/${pedido.idCliente}/"
-          "${pedido.idTpPag}/${pedido.idCondPag}/$descontoStr/$obs/$total",
+      "${pedido.idEmpresa}/$numPed/${pedido.idVendedor}/${pedido.idCliente}/"
+      "${pedido.idTpPag}/${pedido.idCondPag}/$descontoStr/$obs/$total",
     );
 
     print(">>> GravaPed1 URL: $url");
