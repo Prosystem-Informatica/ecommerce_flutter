@@ -2,6 +2,7 @@ import 'dart:developer';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/rest/rest_client.dart';
 import 'i_order_repository.dart';
+import 'model/detail_model.dart';
 import 'model/product_model.dart';
 import 'model/order_model.dart';
 
@@ -78,4 +79,27 @@ class OrderRepository implements IOrderRepository {
   Future<List<OrderModel>> getNotImplementedOrders() async {
     return getOrders(implemented: "NÃO");
   }
+
+  Future<List<OrderDetailModel>> getOrderDetails({
+    required String pedido,
+    required bool implemented,
+  }) async {
+    try {
+      final endpoint = implemented
+          ? '/datasnap/rest/TServerAPPecf/ConsultaPedido/$pedido'
+          : '/datasnap/rest/TServerAPPecf/RetornaItemPedido/$pedido';
+
+      final response = await _rest.get(endpoint);
+      final data = response.data;
+
+      if (data is List) {
+        return OrderDetailModel.fromJsonList(data);
+      }
+      return [];
+    } catch (e) {
+      log("Erro em getOrderDetails: $e");
+      return [];
+    }
+  }
+
 }

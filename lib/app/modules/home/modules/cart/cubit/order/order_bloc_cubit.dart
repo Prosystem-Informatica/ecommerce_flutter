@@ -52,6 +52,7 @@ class OrderBlocCubit extends Cubit<OrderBlocState> {
       ));
     }
   }
+
   Future<void> getOrders({String implemented = "NAO"}) async {
     try {
       emit(state.copyWith(status: OrderStateStatus.loading));

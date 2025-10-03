@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/ui/widget/list_tile_orders_widget.dart';
 import '../../../../repositories/order/model/order_model.dart';
+import '../../../../repositories/order/order_repository.dart';
 import '../../../home/modules/cart/cubit/order/order_bloc_cubit.dart';
 import '../../../home/modules/cart/cubit/order/order_bloc_state.dart';
 
@@ -14,6 +15,7 @@ class OrdersOpenPage extends StatefulWidget {
 
 class _OrdersOpenPageState extends State<OrdersOpenPage> {
   String searchQuery = '';
+  bool _modalAberto = false;
 
   List<OrderModel> getFilteredOrders(List<OrderModel> orders) {
     if (searchQuery.isEmpty) return orders;
@@ -33,14 +35,13 @@ class _OrdersOpenPageState extends State<OrdersOpenPage> {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = Theme.of(context).colorScheme.primary;
+
     return Scaffold(
       body: Stack(
         children: [
           SizedBox.expand(
-            child: Image.asset(
-              'assets/bg-login.jpg',
-              fit: BoxFit.cover,
-            ),
+            child: Image.asset('assets/bg-login.jpg', fit: BoxFit.cover),
           ),
           Column(
             children: [
@@ -56,10 +57,7 @@ class _OrdersOpenPageState extends State<OrdersOpenPage> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(30),
-                      borderSide: BorderSide(
-                        color: Theme.of(context).colorScheme.primary,
-                        width: 2,
-                      ),
+                      borderSide: BorderSide(color: primaryColor, width: 2),
                     ),
                     contentPadding: const EdgeInsets.symmetric(
                       vertical: 0,
@@ -82,42 +80,222 @@ class _OrdersOpenPageState extends State<OrdersOpenPage> {
 
                     if (state.status == OrderStateStatus.error) {
                       return Center(
-                        child: Text(state.errorMessage ?? 'Erro ao buscar pedidos'),
+                        child: Text(
+                          state.errorMessage ?? 'Erro ao buscar pedidos',
+                        ),
                       );
                     }
 
                     List<OrderModel> orders = state.orderModel ?? [];
-                    if (orders.length == 1 && (orders[0].pedido ?? '').isEmpty) {
-                      orders = [];
+                    if (orders.isEmpty ||
+                        (orders.length == 1 &&
+                            (orders[0].pedido ?? '').isEmpty)) {
+                      return const Center(
+                        child: Text('Nenhum pedido encontrado'),
+                      );
                     }
 
                     final filteredOrders = getFilteredOrders(orders);
 
                     if (filteredOrders.isEmpty) {
-                      return const Center(child: Text('Nenhum pedido encontrado'));
+                      return const Center(
+                        child: Text('Nenhum pedido encontrado'),
+                      );
                     }
 
                     return ListView.separated(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
                       itemCount: filteredOrders.length,
                       separatorBuilder: (_, __) => const SizedBox(height: 8),
                       itemBuilder: (context, index) {
                         final order = filteredOrders[index];
 
-                        return Card(
-                          color: Colors.lightBlue[50], // levemente transparente
-                          elevation: 3,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: ListTileOrdersWidget(
-                              order: {
-                                'number': order.pedido,
-                                'client': order.cliente,
-                                'total': order.total,
-                                'date': order.data,
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: Card(
+                            color: Colors.lightBlue[50],
+                            elevation: 3,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(12),
+                              onTap: () async {
+                                if (_modalAberto) return;
+                                setState(() {
+                                  _modalAberto = true;
+                                });
+
+                                final repo =
+                                    context
+                                            .read<OrderBlocCubit>()
+                                            .orderRepository
+                                        as OrderRepository;
+
+                                final details = await repo.getOrderDetails(
+                                  pedido: order.pedido,
+                                  implemented: false,
+                                );
+
+                                if (details.isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text("Nenhum item encontrado"),
+                                    ),
+                                  );
+                                  setState(() {
+                                    _modalAberto = false;
+                                  });
+                                  return;
+                                }
+
+                                final condicao = details.first.condicao;
+                                final forma = details.first.forma;
+
+                                double totalPedido = 0;
+                                for (var item in details) {
+                                  final t =
+                                      double.tryParse(
+                                        item.total.replaceAll(',', '.'),
+                                      ) ??
+                                      0;
+                                  totalPedido += t;
+                                }
+
+                                await showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  shape: const RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.vertical(
+                                      top: Radius.circular(16),
+                                    ),
+                                  ),
+                                  builder: (ctx) {
+                                    return Padding(
+                                      padding: EdgeInsets.only(
+                                        bottom:
+                                            MediaQuery.of(
+                                              ctx,
+                                            ).viewInsets.bottom,
+                                      ),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(16),
+                                        height:
+                                            MediaQuery.of(ctx).size.height *
+                                            0.65,
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Text(
+                                                  "Pedido #${order.pedido}",
+                                                  style: const TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 18,
+                                                  ),
+                                                ),
+                                                IconButton(
+                                                  onPressed:
+                                                      () =>
+                                                          Navigator.of(
+                                                            ctx,
+                                                          ).pop(),
+                                                  icon: const Icon(Icons.close),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 8),
+                                            Text(
+                                              "Condição de Pagamento: $condicao",
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            Text(
+                                              "Forma: $forma",
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            Text(
+                                              "Total do Pedido: R\$ ${totalPedido.toStringAsFixed(2)}",
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 12),
+                                            Expanded(
+                                              child: ListView.separated(
+                                                itemCount: details.length,
+                                                separatorBuilder:
+                                                    (_, __) => const Divider(
+                                                      height: 1,
+                                                    ),
+                                                itemBuilder: (context, i) {
+                                                  final item = details[i];
+                                                  return Padding(
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                          4.0,
+                                                        ),
+                                                    child: Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        Text(
+                                                          "${item.produto} (COD: ${item.codProd})",
+                                                          style:
+                                                              const TextStyle(
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                              ),
+                                                        ),
+                                                        const SizedBox(
+                                                          height: 2,
+                                                        ),
+                                                        Text(
+                                                          "Qtd: ${item.quant} - Unit: R\$ ${item.prcUnit}",
+                                                        ),
+                                                        Text(
+                                                          "Total: R\$ ${item.total}",
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  );
+                                                },
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                );
+
+                                setState(() {
+                                  _modalAberto = false;
+                                });
                               },
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: ListTileOrdersWidget(
+                                  order: {
+                                    'number': order.pedido,
+                                    'client': order.cliente,
+                                    'total': order.total,
+                                    'date': order.data,
+                                  },
+                                ),
+                              ),
                             ),
                           ),
                         );

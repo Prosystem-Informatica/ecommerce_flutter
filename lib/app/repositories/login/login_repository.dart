@@ -58,6 +58,11 @@ class LoginRepository implements ILoginRepository {
         await prefs.setString('userLogin', login);
         await prefs.setString('userCodigo', res.codigo ?? '');
         await prefs.setString('companyCodigo', res.empresa ?? '');
+        await prefs.setString('userFantasia', res.fantasia ?? 'Nome pendente');
+        await prefs.setString('userEmail', res.email?.isNotEmpty == true ? res.email! : 'Email pendente');
+        if (res.imagem64 != null && res.imagem64!.isNotEmpty) {
+          await prefs.setString('userImagem64', res.imagem64!);
+        }
       }
 
       return res;
@@ -72,5 +77,8 @@ class LoginRepository implements ILoginRepository {
     await prefs.remove('userLogin');
     await prefs.remove('userCodigo');
     await prefs.remove('companyCodigo');
+    await prefs.remove('userFantasia');
+    await prefs.remove('userEmail');
+    await prefs.remove('userImagem64');
   }
 }
