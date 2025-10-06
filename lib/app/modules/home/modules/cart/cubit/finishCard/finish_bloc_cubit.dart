@@ -3,7 +3,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../../../repositories/customer/customer_repository.dart';
 import '../../../../../../repositories/customer/model/customer_model.dart';
 import '../../../../../../repositories/finishCard/finish_card_repository.dart';
-import '../../../../../../repositories/finishCard/model/finish_cart_model.dart';
+import '../../../../../../repositories/finishCard/model/cart_model.dart';
+import '../../../../../../repositories/finishCard/model/cart_order_model.dart';
 import '../../../../../../repositories/payment/model/payment_model.dart';
 import '../../../../../../repositories/payment/payment_repository.dart';
 import '../../../../../../repositories/product/model/consult_product_model.dart';
@@ -14,6 +15,7 @@ class FinishCartCubit extends Cubit<FinishCartState> {
   final SharedPreferences prefs;
   final CustomerRepository customerRepository;
   final FinishCartRepository finishCartRepository;
+
 
   FinishCartCubit({
     required this.paymentRepository,
@@ -134,10 +136,10 @@ class FinishCartCubit extends Cubit<FinishCartState> {
   String _formatarValor(double valor) =>
       valor.toStringAsFixed(2).replaceAll('.', ',');
 
-  FinishCartModel _montarPedido(double desconto) {
+ CartModel _montarPedido(double desconto) {
     final totalComDesconto = state.total - desconto;
 
-    return FinishCartModel(
+    return CartModel(
       idEmpresa: state.empresaId,
       numPed: "",
       idVendedor: state.vendedorLogin,
@@ -151,9 +153,9 @@ class FinishCartCubit extends Cubit<FinishCartState> {
     );
   }
 
-  FinishCartProdutoModel _converterProduto(ConsultProductModel p) {
+  CartOrderModel _converterProduto(ConsultProductModel p) {
     final precoDouble = double.tryParse(p.preco.replaceAll(',', '.')) ?? 0;
-    return FinishCartProdutoModel(
+    return CartOrderModel(
       idProduto: p.codigo,
       quantidade: p.quantidade,
       preco: _formatarValor(precoDouble),

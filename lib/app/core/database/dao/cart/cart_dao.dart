@@ -2,7 +2,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:ecommerce/app/repositories/finishCard/model/cart_order_model.dart';
 import 'package:ecommerce/app/repositories/finishCard/model/cart_model.dart';
 
-import '../../database.dart';
+import '../../data_base.dart';
 
 class CartDao {
   static const String _tableCart = 'cart';

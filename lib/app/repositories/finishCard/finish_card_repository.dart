@@ -1,5 +1,6 @@
 import 'package:http/http.dart' as http;
-import 'model/finish_cart_model.dart';
+import 'model/cart_model.dart';
+import 'model/cart_order_model.dart';
 
 class FinishCartRepository {
   final String baseUrl =
@@ -20,7 +21,7 @@ class FinishCartRepository {
     }
   }
 
-  Future<void> gravaPed1(FinishCartModel pedido, String numPed) async {
+  Future<void> gravaPed1(CartModel pedido, String numPed) async {
     final descontoStr = pedido.valDesc.isEmpty ? "0" : pedido.valDesc;
 
     final obs = pedido.obsPed.isEmpty
@@ -47,7 +48,7 @@ class FinishCartRepository {
     }
   }
 
-  Future<void> gravaPed2(String numPed, FinishCartProdutoModel produto) async {
+  Future<void> gravaPed2(String numPed, CartOrderModel produto) async {
     final precoStr = produto.preco.isEmpty ? "0,00" : produto.preco;
 
     final url = Uri.parse(
@@ -66,7 +67,7 @@ class FinishCartRepository {
     }
   }
 
-  Future<bool> enviarPedido(FinishCartModel pedido) async {
+  Future<bool> enviarPedido(CartModel pedido) async {
     try {
       final numPed = await incluirPedido();
 
