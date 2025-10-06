@@ -10,7 +10,8 @@ Future<Database> getDatabase() async {
     path,
     version: 1,
     onCreate: (db, version) {
-      db.execute(CartDao.tableCart);
+      db.execute(CartDao.createTableCart);
+      db.execute(CartDao.createTableCartOrder);
     },
     onUpgrade: (db, oldVersion, newVersion) {},
   );

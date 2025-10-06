@@ -1,9 +1,11 @@
 import 'dart:developer';
 
+import 'package:ecommerce/app/repositories/finishCard/model/cart_model.dart';
+import 'package:ecommerce/app/repositories/finishCard/model/cart_order_model.dart';
 import 'package:http/http.dart' as http;
-import 'model/finish_cart_model.dart';
+import 'i_finish_card_repository.dart';
 
-class FinishCartRepository {
+class FinishCartRepository implements IFinishCartRepository {
   final String baseUrl =
       "http://prosystem04.dyndns-work.com/datasnap/rest/TServerAPPecf";
 
@@ -22,7 +24,7 @@ class FinishCartRepository {
     }
   }
 
-  Future<void> gravaPed1(FinishCartModel pedido, String numPed) async {
+  Future<void> gravaPed1(CartModel pedido, String numPed) async {
     final descontoStr = pedido.valDesc.isEmpty ? "0" : pedido.valDesc;
 
     final obs =
@@ -48,7 +50,7 @@ class FinishCartRepository {
     }
   }
 
-  Future<void> gravaPed2(String numPed, FinishCartProdutoModel produto) async {
+  Future<void> gravaPed2(String numPed, CartOrderModel produto) async {
     final precoStr = produto.preco.isEmpty ? "0,00" : produto.preco;
 
     final url = Uri.parse(
@@ -67,7 +69,7 @@ class FinishCartRepository {
     }
   }
 
-  Future<bool> enviarPedido(FinishCartModel pedido) async {
+  Future<bool> enviarPedido(CartModel pedido) async {
     try {
       final numPed = await incluirPedido();
 

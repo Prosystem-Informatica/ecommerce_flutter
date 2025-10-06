@@ -28,6 +28,7 @@ class _OrdersWaitPageState extends State<OrdersWaitPage> {
   @override
   void initState() {
     super.initState();
+    //TODO:Adicionar REQUEST do banco de dados pra trazer somente que tem no DB.
     context.read<OrderBlocCubit>().getOrders(implemented: "NAO");
   }
 

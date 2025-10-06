@@ -1,28 +1,6 @@
-class FinishCartProdutoModel {
-  final String idProduto;
-  final int quantidade;
-  final String preco;
+import 'package:ecommerce/app/repositories/finishCard/model/cart_order_model.dart';
 
-  FinishCartProdutoModel({
-    required this.idProduto,
-    required this.quantidade,
-    required this.preco,
-  });
-
-  FinishCartProdutoModel copyWith({
-    String? idProduto,
-    int? quantidade,
-    String? preco,
-  }) {
-    return FinishCartProdutoModel(
-      idProduto: idProduto ?? this.idProduto,
-      quantidade: quantidade ?? this.quantidade,
-      preco: preco ?? this.preco,
-    );
-  }
-}
-
-class FinishCartModel {
+class CartModel {
   final String idEmpresa;
   final String numPed;
   final String idVendedor;
@@ -32,9 +10,9 @@ class FinishCartModel {
   final String valDesc;
   final String obsPed;
   final String totalPed;
-  final List<FinishCartProdutoModel> produtos;
+  final List<CartOrderModel> produtos;
 
-  FinishCartModel({
+  CartModel({
     required this.idEmpresa,
     required this.numPed,
     required this.idVendedor,
@@ -47,7 +25,7 @@ class FinishCartModel {
     required this.produtos,
   });
 
-  FinishCartModel copyWith({
+  CartModel copyWith({
     String? idEmpresa,
     String? numPed,
     String? idVendedor,
@@ -57,9 +35,9 @@ class FinishCartModel {
     String? valDesc,
     String? obsPed,
     String? totalPed,
-    List<FinishCartProdutoModel>? produtos,
+    List<CartOrderModel>? produtos,
   }) {
-    return FinishCartModel(
+    return CartModel(
       idEmpresa: idEmpresa ?? this.idEmpresa,
       numPed: numPed ?? this.numPed,
       idVendedor: idVendedor ?? this.idVendedor,

@@ -1,9 +1,11 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../../../core/database/dao/cart/cart_dao.dart';
 import '../../../../../../repositories/customer/customer_repository.dart';
 import '../../../../../../repositories/customer/model/customer_model.dart';
 import '../../../../../../repositories/finishCard/finish_card_repository.dart';
-import '../../../../../../repositories/finishCard/model/finish_cart_model.dart';
+import '../../../../../../repositories/finishCard/model/cart_model.dart';
+import '../../../../../../repositories/finishCard/model/cart_order_model.dart';
 import '../../../../../../repositories/payment/model/payment_model.dart';
 import '../../../../../../repositories/payment/payment_repository.dart';
 import '../../../../../../repositories/product/model/consult_product_model.dart';
@@ -14,6 +16,7 @@ class FinishCartCubit extends Cubit<FinishCartState> {
   final SharedPreferences prefs;
   final CustomerRepository customerRepository;
   final FinishCartRepository finishCartRepository;
+  CartDao _cartDao = CartDao();
 
   FinishCartCubit({
     required this.paymentRepository,
@@ -127,7 +130,7 @@ class FinishCartCubit extends Cubit<FinishCartState> {
 
       final totalComDesconto = state.total - desconto;
 
-      final pedido = FinishCartModel(
+      final pedido = CartModel(
         idEmpresa: "1",
         numPed: "",
         idVendedor: state.vendedorLogin,
@@ -139,7 +142,7 @@ class FinishCartCubit extends Cubit<FinishCartState> {
         totalPed: formatarValor(totalComDesconto),
         produtos:
             state.produtos.map((p) {
-              return FinishCartProdutoModel(
+              return CartOrderModel(
                 idProduto: p.codigo,
                 quantidade: p.quantidade,
                 preco: formatarValor(
@@ -148,6 +151,9 @@ class FinishCartCubit extends Cubit<FinishCartState> {
               );
             }).toList(),
       );
+
+      //TODO:Request para salvar dados locais ajustar conforme necessario.
+      await _cartDao.saveCart(pedido);
 
       final sucesso = await finishCartRepository.enviarPedido(pedido);
 

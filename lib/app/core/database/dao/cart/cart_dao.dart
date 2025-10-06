@@ -1,108 +1,111 @@
 import 'package:sqflite/sqflite.dart';
+import 'package:ecommerce/app/repositories/finishCard/model/cart_order_model.dart';
+import 'package:ecommerce/app/repositories/finishCard/model/cart_model.dart';
 
 import '../../database.dart';
 
 class CartDao {
   static const String _tableCart = 'cart';
-  static const String tableCart =
-      'CREATE TABLE $_tableCart('
-      '$_id INTEGER, '
-      '$_product_name INTEGER);';
+  static const String _tableCartOrder = 'cart_order';
 
-  static const String _id = 'id';
-  static const String _product_name = 'product_name';
-
-  Future<int> saveCartOffModel() async {
-    final Database db = await getDatabase();
-    Map<String, dynamic> customersMap = _toMapCartOffModel();
-    return db.insert(_tableCart, customersMap);
-  }
-
-  Map<String, dynamic> _toMapCartOffModel() {
-    final Map<String, dynamic> cartOffModelMap = Map();
-
-    return cartOffModelMap;
-  }
-
-  /*
-  Future<CartOffModel> getCartOffModelById(int id) async {
-    final Database db = await getDatabase();
-    List<Map> result = await db.query(
-      _tableCart,
-      columns: [
-        _id,
-        _id_nota_fiscal_assinatura,
-        _inter_number,
-        _bank_slip_number,
-        _bank_slip_value,
-        _bank_slip_issue,
-        _bank_slip_due,
-        _bank_slip_payment,
-        _status,
-      ],
-      where: 'id = ?',
-      whereArgs: [id],
+  static const String createTableCart = '''
+    CREATE TABLE $_tableCart (
+      idEmpresa TEXT,
+      numPed TEXT PRIMARY KEY,
+      idVendedor TEXT,
+      idCliente TEXT,
+      idTpPag TEXT,
+      idCondPag TEXT,
+      valDesc TEXT,
+      obsPed TEXT,
+      totalPed TEXT
     );
+  ''';
 
-    if (result.length > 0) {
-      return new CartOffModel.fromJson(result.first);
-    }
-    return null;
-  }
-
-  Future<List<CartOffModel>> findAllCartOffModel() async {
-    final Database db = await getDatabase();
-    final List<Map<String, dynamic>> result = await db.query(_tableCart);
-    List<CartOffModel> cartOffModelList = _toListCartOffModel(result);
-    return cartOffModelList;
-  }
-
-  Future<bool> verifyCartOffModel(int id) async {
-    final Database db = await getDatabase();
-    List<Map> result = await db.query(
-      _tableCart,
-      columns: ['id'],
-      where: 'id = ?',
-      whereArgs: ['$id'],
+  static const String createTableCartOrder = '''
+    CREATE TABLE $_tableCartOrder (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      numPed TEXT,
+      idProduto TEXT,
+      quantidade INTEGER,
+      preco TEXT,
+      FOREIGN KEY (numPed) REFERENCES $_tableCart (numPed) ON DELETE CASCADE
     );
+  ''';
 
-    if (result.length > 0) {
-      return true;
+  Future<int> saveCart(CartModel cart) async {
+    final Database db = await getDatabase();
+
+    await db.insert(_tableCart, _toMapCart(cart));
+
+    for (final produto in cart.produtos) {
+      await db.insert(_tableCartOrder, _toMapCartOrder(cart.numPed, produto));
     }
-    return false;
+
+    return 1;
   }
 
-  Map<String, dynamic> _toMapCartOffModel(CartOffModel cartOffModel) {
-    final Map<String, dynamic> cartOffModelMap = Map();
-    cartOffModelMap['id'] = cartOffModel.id;
-    cartOffModelMap['id_nota_fiscal_assinatura'] =
-        cartOffModel.id_nota_fiscal_assinatura;
-    cartOffModelMap['inter_number'] = cartOffModel.inter_number;
-    cartOffModelMap['bank_slip_number'] = cartOffModel.bank_slip_number;
-    cartOffModelMap['bank_slip_value'] = cartOffModel.bank_slip_value;
-    cartOffModelMap['bank_slip_issue'] = cartOffModel.bank_slip_issue;
-    cartOffModelMap['bank_slip_due'] = cartOffModel.bank_slip_due;
-    cartOffModelMap['bank_slip_payment'] = cartOffModel.bank_slip_payment;
-    cartOffModelMap['status'] = cartOffModel.status;
-    return cartOffModelMap;
-  }
+  Future<List<CartModel>> getCarts() async {
+    final Database db = await getDatabase();
+    final List<Map<String, dynamic>> resultCart = await db.query(_tableCart);
+    List<CartModel> carts = [];
 
-  List<CartOffModel> _toListCartOffModel(List<Map<String, dynamic>> result) {
-    final List<CartOffModel> cartOffList = List();
-    for (Map<String, dynamic> row in result) {
-      final CartOffModel cart = CartOffModel(
-        row['id'],
-        row['id_nota_fiscal_assinatura'],
-        row['inter_number'],
-        row['bank_slip_number'],
-        row['bank_slip_value'],
-        row['bank_slip_issue'],
-        row['bank_slip_due'],
-        row['bank_slip_payment '],
-        row['status'],
+    for (final cartMap in resultCart) {
+      final String numPed = cartMap['numPed'];
+      final List<Map<String, dynamic>> resultProducts = await db.query(
+        _tableCartOrder,
+        where: 'numPed = ?',
+        whereArgs: [numPed],
       );
-      cartOffList.add(cart);
+
+      final List<CartOrderModel> produtos =
+          resultProducts.map((p) {
+            return CartOrderModel(
+              idProduto: p['idProduto'],
+              quantidade: p['quantidade'],
+              preco: p['preco'],
+            );
+          }).toList();
+
+      carts.add(
+        CartModel(
+          idEmpresa: cartMap['idEmpresa'],
+          numPed: cartMap['numPed'],
+          idVendedor: cartMap['idVendedor'],
+          idCliente: cartMap['idCliente'],
+          idTpPag: cartMap['idTpPag'],
+          idCondPag: cartMap['idCondPag'],
+          valDesc: cartMap['valDesc'],
+          obsPed: cartMap['obsPed'],
+          totalPed: cartMap['totalPed'],
+          produtos: produtos,
+        ),
+      );
     }
-    return cartOffList;
-  }*/
+
+    return carts;
+  }
+
+  Map<String, dynamic> _toMapCart(CartModel cart) {
+    return {
+      'idEmpresa': cart.idEmpresa,
+      'numPed': cart.numPed,
+      'idVendedor': cart.idVendedor,
+      'idCliente': cart.idCliente,
+      'idTpPag': cart.idTpPag,
+      'idCondPag': cart.idCondPag,
+      'valDesc': cart.valDesc,
+      'obsPed': cart.obsPed,
+      'totalPed': cart.totalPed,
+    };
+  }
+
+  Map<String, dynamic> _toMapCartOrder(String numPed, CartOrderModel order) {
+    return {
+      'numPed': numPed,
+      'idProduto': order.idProduto,
+      'quantidade': order.quantidade,
+      'preco': order.preco,
+    };
+  }
 }
