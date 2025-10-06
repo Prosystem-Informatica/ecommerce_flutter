@@ -55,7 +55,7 @@ class _FinishCartPageState extends State<FinishCartPage> with Messages<FinishCar
     final cubit = context.read<FinishCartCubit>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Finalizar Pedido")),
+      appBar: AppBar(title: const Text("Adicionar Pedido")),
       body: Stack(
         children: [
           SizedBox.expand(

@@ -1,12 +1,10 @@
 import 'package:equatable/equatable.dart';
-import 'package:match/match.dart';
 import '../../../../../../repositories/customer/model/customer_model.dart';
 import '../../../../../../repositories/payment/model/payment_model.dart';
 import '../../../../../../repositories/product/model/consult_product_model.dart';
 
 part 'finish_bloc_state.g.dart';
 
-@match
 enum FinishCartStatus { initial, loading, error, success }
 
 class FinishCartState extends Equatable {
@@ -16,6 +14,7 @@ class FinishCartState extends Equatable {
   final TipoPagamentoModel? tipoPagamento;
   final String obs;
   final String vendedorLogin;
+  final String empresaId;
   final double total;
   final FinishCartStatus status;
   final String? errorMessage;
@@ -28,6 +27,7 @@ class FinishCartState extends Equatable {
     this.tipoPagamento,
     this.obs = '',
     this.vendedorLogin = '',
+    this.empresaId = '',
     this.total = 0.0,
     this.status = FinishCartStatus.initial,
     this.errorMessage,
@@ -35,18 +35,7 @@ class FinishCartState extends Equatable {
   });
 
   factory FinishCartState.initial() {
-    return const FinishCartState(
-      produtos: [],
-      cliente: null,
-      condicaoPagamento: null,
-      tipoPagamento: null,
-      obs: '',
-      vendedorLogin: '',
-      total: 0.0,
-      status: FinishCartStatus.initial,
-      errorMessage: null,
-      successMessage: null,
-    );
+    return const FinishCartState(produtos: []);
   }
 
   FinishCartState copyWith({
@@ -56,6 +45,7 @@ class FinishCartState extends Equatable {
     TipoPagamentoModel? tipoPagamento,
     String? obs,
     String? vendedorLogin,
+    String? empresaId,
     double? total,
     FinishCartStatus? status,
     String? errorMessage,
@@ -68,6 +58,7 @@ class FinishCartState extends Equatable {
       tipoPagamento: tipoPagamento ?? this.tipoPagamento,
       obs: obs ?? this.obs,
       vendedorLogin: vendedorLogin ?? this.vendedorLogin,
+      empresaId: empresaId ?? this.empresaId,
       total: total ?? _calculaTotal(produtos ?? this.produtos),
       status: status ?? this.status,
       errorMessage: errorMessage ?? this.errorMessage,
@@ -78,34 +69,8 @@ class FinishCartState extends Equatable {
   double _calculaTotal(List<ConsultProductModel> produtos) {
     return produtos.fold<double>(
       0.0,
-          (sum, p) =>
-      sum + (double.tryParse(p.preco.replaceAll(',', '.')) ?? 0) * p.quantidade,
+          (sum, p) => sum + (double.tryParse(p.preco.replaceAll(',', '.')) ?? 0) * p.quantidade,
     );
-  }
-
-  List<Map<String, dynamic>> get produtosAgrupados {
-    final Map<String, ConsultProductModel> agrupados = {};
-    for (var p in produtos) {
-      if (agrupados.containsKey(p.codigo)) {
-        agrupados[p.codigo]!.quantidade += p.quantidade;
-      } else {
-        agrupados[p.codigo] = ConsultProductModel(
-          codigo: p.codigo,
-          produto: p.produto,
-          preco: p.preco,
-          estoque: p.estoque,
-          imagem: p.imagem,
-          quantidade: p.quantidade,
-        );
-      }
-    }
-    return agrupados.values
-        .map((p) => {
-      'ID_PROD': p.codigo,
-      'QtdProd': p.quantidade,
-      'PrcUnit': p.preco,
-    })
-        .toList();
   }
 
   @override
@@ -116,8 +81,10 @@ class FinishCartState extends Equatable {
     tipoPagamento,
     obs,
     vendedorLogin,
+    empresaId,
     total,
     status,
     errorMessage,
+    successMessage,
   ];
 }

@@ -20,14 +20,12 @@ class FinishCartCubit extends Cubit<FinishCartState> {
     required this.prefs,
     required this.customerRepository,
     required this.finishCartRepository,
-  }) : super(FinishCartState.initial()) {
-    _init();
-  }
-
-  void _init() {
-    final codigo = prefs.getString('userCodigo') ?? '';
-    emit(state.copyWith(vendedorLogin: codigo));
-  }
+  }) : super(
+    FinishCartState.initial().copyWith(
+      vendedorLogin: prefs.getString('userCodigo') ?? '',
+      empresaId: prefs.getString('companyCodigo') ?? '',
+    ),
+  );
 
   void setCliente(CustomerModel cliente) {
     emit(state.copyWith(cliente: cliente));
@@ -46,8 +44,7 @@ class FinishCartCubit extends Cubit<FinishCartState> {
   }
 
   void setProdutos(List<ConsultProductModel> itens) {
-    final agrupados = _agruparProdutos(itens);
-    emit(state.copyWith(produtos: agrupados));
+    emit(state.copyWith(produtos: _agruparProdutos(itens)));
   }
 
   void addProduto(ConsultProductModel produto) {
@@ -55,64 +52,55 @@ class FinishCartCubit extends Cubit<FinishCartState> {
     final index = novaLista.indexWhere((p) => p.codigo == produto.codigo);
 
     if (index >= 0) {
-      novaLista[index].quantidade +=
-          produto.quantidade > 0 ? produto.quantidade : 1;
+      novaLista[index].quantidade += produto.quantidadePositiva;
     } else {
-      produto.quantidade = produto.quantidade > 0 ? produto.quantidade : 1;
-      novaLista.add(produto);
+      novaLista.add(produto.copiaComQuantidadePositiva);
     }
 
     emit(state.copyWith(produtos: _agruparProdutos(novaLista)));
   }
 
-  List<ConsultProductModel> _agruparProdutos(
-    List<ConsultProductModel> produtos,
-  ) {
-    final Map<String, ConsultProductModel> map = {};
-
-    for (var p in produtos) {
-      if (map.containsKey(p.codigo)) {
-        map[p.codigo]!.quantidade += p.quantidade;
-      } else {
-        map[p.codigo] = ConsultProductModel(
-          codigo: p.codigo,
-          produto: p.produto,
-          preco: p.preco,
-          estoque: p.estoque,
-          imagem: p.imagem,
-          quantidade: p.quantidade,
-        );
-      }
-    }
-
-    return map.values.toList();
-  }
-
-  Future<List<CondicaoPagamentoModel>> fetchCondicoesPagamento() async {
-    return await paymentRepository.getCondicoesPagamento();
-  }
-
-  Future<List<TipoPagamentoModel>> fetchTiposPagamento() async {
-    return await paymentRepository.getTiposPagamento();
-  }
-
   void resetarCampos() {
     emit(
-      FinishCartState.initial().copyWith(vendedorLogin: state.vendedorLogin),
+      FinishCartState.initial().copyWith(
+        vendedorLogin: state.vendedorLogin,
+        empresaId: state.empresaId,
+      ),
     );
   }
 
   Future<List<CustomerModel>> fetchClientes() async {
     try {
-      final clientes = await customerRepository.getCustomers();
-      return clientes;
+      return await customerRepository.getCustomers();
     } catch (e) {
-      emit(
-        state.copyWith(
-          status: FinishCartStatus.error,
-          errorMessage: e.toString(),
-        ),
-      );
+      emit(state.copyWith(
+        status: FinishCartStatus.error,
+        errorMessage: e.toString(),
+      ));
+      return [];
+    }
+  }
+
+  Future<List<CondicaoPagamentoModel>> fetchCondicoesPagamento() async {
+    try {
+      return await paymentRepository.getCondicoesPagamento();
+    } catch (e) {
+      emit(state.copyWith(
+        status: FinishCartStatus.error,
+        errorMessage: e.toString(),
+      ));
+      return [];
+    }
+  }
+
+  Future<List<TipoPagamentoModel>> fetchTiposPagamento() async {
+    try {
+      return await paymentRepository.getTiposPagamento();
+    } catch (e) {
+      emit(state.copyWith(
+        status: FinishCartStatus.error,
+        errorMessage: e.toString(),
+      ));
       return [];
     }
   }
@@ -121,56 +109,79 @@ class FinishCartCubit extends Cubit<FinishCartState> {
     emit(state.copyWith(status: FinishCartStatus.loading));
 
     try {
-      String formatarValor(double valor) {
-        return valor.toStringAsFixed(2).replaceAll('.', ',');
-      }
-
-      final totalComDesconto = state.total - desconto;
-
-      final pedido = FinishCartModel(
-        idEmpresa: "1",
-        numPed: "",
-        idVendedor: state.vendedorLogin,
-        idCliente: state.cliente?.codigo ?? "",
-        idTpPag: state.tipoPagamento?.codigo ?? "",
-        idCondPag: state.condicaoPagamento?.codigo ?? "",
-        valDesc: formatarValor(desconto),
-        obsPed: state.obs,
-        totalPed: formatarValor(totalComDesconto),
-        produtos:
-            state.produtos.map((p) {
-              return FinishCartProdutoModel(
-                idProduto: p.codigo,
-                quantidade: p.quantidade,
-                preco: formatarValor(
-                  double.tryParse(p.preco.replaceAll(',', '.')) ?? 0,
-                ),
-              );
-            }).toList(),
-      );
-
+      final pedido = _montarPedido(desconto);
       final sucesso = await finishCartRepository.enviarPedido(pedido);
 
       if (sucesso) {
         emit(state.copyWith(status: FinishCartStatus.success));
         return true;
       } else {
-        emit(
-          state.copyWith(
-            status: FinishCartStatus.error,
-            errorMessage: "Falha ao enviar pedido",
-          ),
-        );
+        emit(state.copyWith(
+          status: FinishCartStatus.error,
+          errorMessage: "Falha ao enviar pedido",
+        ));
         return false;
       }
     } catch (e) {
-      emit(
-        state.copyWith(
-          status: FinishCartStatus.error,
-          errorMessage: e.toString(),
-        ),
-      );
+      emit(state.copyWith(
+        status: FinishCartStatus.error,
+        errorMessage: e.toString(),
+      ));
       return false;
     }
   }
+
+  String _formatarValor(double valor) =>
+      valor.toStringAsFixed(2).replaceAll('.', ',');
+
+  FinishCartModel _montarPedido(double desconto) {
+    final totalComDesconto = state.total - desconto;
+
+    return FinishCartModel(
+      idEmpresa: state.empresaId,
+      numPed: "",
+      idVendedor: state.vendedorLogin,
+      idCliente: state.cliente?.codigo ?? "",
+      idTpPag: state.tipoPagamento?.codigo ?? "",
+      idCondPag: state.condicaoPagamento?.codigo ?? "",
+      valDesc: _formatarValor(desconto),
+      obsPed: state.obs,
+      totalPed: _formatarValor(totalComDesconto),
+      produtos: state.produtos.map(_converterProduto).toList(),
+    );
+  }
+
+  FinishCartProdutoModel _converterProduto(ConsultProductModel p) {
+    final precoDouble = double.tryParse(p.preco.replaceAll(',', '.')) ?? 0;
+    return FinishCartProdutoModel(
+      idProduto: p.codigo,
+      quantidade: p.quantidade,
+      preco: _formatarValor(precoDouble),
+    );
+  }
+
+  List<ConsultProductModel> _agruparProdutos(List<ConsultProductModel> produtos) {
+    final Map<String, ConsultProductModel> map = {};
+    for (var p in produtos) {
+      if (map.containsKey(p.codigo)) {
+        map[p.codigo]!.quantidade += p.quantidade;
+      } else {
+        map[p.codigo] = p;
+      }
+    }
+    return map.values.toList();
+  }
+}
+
+extension ProdutoHelpers on ConsultProductModel {
+  int get quantidadePositiva => quantidade > 0 ? quantidade : 1;
+
+  ConsultProductModel get copiaComQuantidadePositiva => ConsultProductModel(
+    codigo: codigo,
+    produto: produto,
+    preco: preco,
+    estoque: estoque,
+    imagem: imagem,
+    quantidade: quantidadePositiva,
+  );
 }
