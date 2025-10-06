@@ -2,7 +2,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:ecommerce/app/repositories/finishCard/model/cart_order_model.dart';
 import 'package:ecommerce/app/repositories/finishCard/model/cart_model.dart';
 
-import '../../data_base.dart';
+import '../../database.dart';
 
 class CartDao {
   static const String _tableCart = 'cart';
@@ -99,6 +99,16 @@ class CartDao {
       'totalPed': cart.totalPed,
     };
   }
+
+  Future<int> deleteCart(String numPed) async {
+    final Database db = await getDatabase();
+    return await db.delete(
+      _tableCart,
+      where: 'numPed = ?',
+      whereArgs: [numPed],
+    );
+  }
+
 
   Map<String, dynamic> _toMapCartOrder(String numPed, CartOrderModel order) {
     return {

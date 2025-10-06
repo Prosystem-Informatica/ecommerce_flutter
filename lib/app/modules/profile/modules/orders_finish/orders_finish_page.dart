@@ -15,7 +15,7 @@ List<OrderModel> _filterOrders(Map<String, dynamic> args) {
   final year = args['year'] as int;
 
   return orders.where((o) {
-    if (o.data == null || o.data.isEmpty) return false;
+    if (o.data.isEmpty) return false;
 
     try {
       final parsedDate = DateFormat("dd/MM/yyyy").parse(o.data);
@@ -24,8 +24,8 @@ List<OrderModel> _filterOrders(Map<String, dynamic> args) {
       return false;
     }
 
-    final cliente = (o.cliente ?? '').toLowerCase();
-    final pedido = (o.pedido ?? '').toLowerCase();
+    final cliente = o.cliente.toLowerCase();
+    final pedido = o.pedido.toLowerCase();
     return search.isEmpty ||
         cliente.contains(search.toLowerCase()) ||
         pedido.contains(search.toLowerCase());
@@ -109,10 +109,16 @@ class _OrdersFinishPageState extends State<OrdersFinishPage> {
       return;
     }
 
-    double totalPedido = details.fold(0, (acc, item) {
+    double totalItens = details.fold(0, (acc, item) {
       final t = double.tryParse(item.total.replaceAll(',', '.')) ?? 0;
       return acc + t;
     });
+
+
+    final desconto = double.tryParse(order.desconto.replaceAll(',', '.')) ?? 0;
+    final totalComDesconto = totalItens - desconto;
+
+    String formatar(double valor) => valor.toStringAsFixed(2).replaceAll('.', ',');
 
     final condicao = details.first.condicao;
     final forma = details.first.forma;
@@ -139,13 +145,12 @@ class _OrdersFinishPageState extends State<OrdersFinishPage> {
                 IconButton(onPressed: () => Navigator.of(ctx).pop(), icon: const Icon(Icons.close)),
               ]),
               const SizedBox(height: 8),
+              Text("Cliente: ${order.cliente}", style: const TextStyle(fontWeight: FontWeight.bold)),
               Text("Condição de Pagamento: $condicao", style: const TextStyle(fontWeight: FontWeight.bold)),
               Text("Forma: $forma", style: const TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              Text(
-                "Total do Pedido: R\$ ${totalPedido.toStringAsFixed(2)}",
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
+              Text("Desconto: R\$ ${formatar(desconto)}", style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text("Total do Pedido: R\$ ${formatar(totalComDesconto)}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               const SizedBox(height: 12),
               Expanded(
                 child: ListView.builder(

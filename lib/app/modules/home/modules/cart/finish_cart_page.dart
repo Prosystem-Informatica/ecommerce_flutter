@@ -260,7 +260,7 @@ class _FinishCartPageState extends State<FinishCartPage> with Messages<FinishCar
                             onPressed: () {
                               if (!validateFields(state)) return;
 
-                              cubit.enviarPedido(
+                              cubit.salvarLocalmente(
                                 double.tryParse(_descontoController.text.replaceAll(',', '.')) ?? 0.0,
                               );
                             },

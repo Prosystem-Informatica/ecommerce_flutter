@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../../../core/database/dao/cart/cart_dao.dart';
 import '../../../../../../repositories/customer/customer_repository.dart';
 import '../../../../../../repositories/customer/model/customer_model.dart';
 import '../../../../../../repositories/finishCard/finish_card_repository.dart';
@@ -15,7 +16,7 @@ class FinishCartCubit extends Cubit<FinishCartState> {
   final SharedPreferences prefs;
   final CustomerRepository customerRepository;
   final FinishCartRepository finishCartRepository;
-
+  CartDao _cartDao = CartDao();
 
   FinishCartCubit({
     required this.paymentRepository,
@@ -23,11 +24,11 @@ class FinishCartCubit extends Cubit<FinishCartState> {
     required this.customerRepository,
     required this.finishCartRepository,
   }) : super(
-    FinishCartState.initial().copyWith(
-      vendedorLogin: prefs.getString('userCodigo') ?? '',
-      empresaId: prefs.getString('companyCodigo') ?? '',
-    ),
-  );
+         FinishCartState.initial().copyWith(
+           vendedorLogin: prefs.getString('userCodigo') ?? '',
+           empresaId: prefs.getString('companyCodigo') ?? '',
+         ),
+       );
 
   void setCliente(CustomerModel cliente) {
     emit(state.copyWith(cliente: cliente));
@@ -75,10 +76,12 @@ class FinishCartCubit extends Cubit<FinishCartState> {
     try {
       return await customerRepository.getCustomers();
     } catch (e) {
-      emit(state.copyWith(
-        status: FinishCartStatus.error,
-        errorMessage: e.toString(),
-      ));
+      emit(
+        state.copyWith(
+          status: FinishCartStatus.error,
+          errorMessage: e.toString(),
+        ),
+      );
       return [];
     }
   }
@@ -87,10 +90,12 @@ class FinishCartCubit extends Cubit<FinishCartState> {
     try {
       return await paymentRepository.getCondicoesPagamento();
     } catch (e) {
-      emit(state.copyWith(
-        status: FinishCartStatus.error,
-        errorMessage: e.toString(),
-      ));
+      emit(
+        state.copyWith(
+          status: FinishCartStatus.error,
+          errorMessage: e.toString(),
+        ),
+      );
       return [];
     }
   }
@@ -99,44 +104,90 @@ class FinishCartCubit extends Cubit<FinishCartState> {
     try {
       return await paymentRepository.getTiposPagamento();
     } catch (e) {
+      emit(
+        state.copyWith(
+          status: FinishCartStatus.error,
+          errorMessage: e.toString(),
+        ),
+      );
+      return [];
+    }
+  }
+
+  Future<void> salvarLocalmente(double desconto) async {
+    final pedido = _montarPedido(desconto);
+
+    try {
+      await _cartDao.saveCart(pedido);
+      emit(state.copyWith(
+        status: FinishCartStatus.success,
+        successMessage: "Pedido salvo localmente!",
+      ));
+      resetarCampos();
+    } catch (e) {
       emit(state.copyWith(
         status: FinishCartStatus.error,
-        errorMessage: e.toString(),
+        errorMessage: "Erro ao salvar localmente: $e",
+      ));
+    }
+  }
+
+  Future<List<CartModel>> fetchPedidosPendentes() async {
+    try {
+      final pedidos = await _cartDao.getCarts();
+      return pedidos;
+    } catch (e) {
+      emit(state.copyWith(
+        status: FinishCartStatus.error,
+        errorMessage: "Erro ao buscar pedidos: $e",
       ));
       return [];
     }
   }
 
-  Future<bool> enviarPedido(double desconto) async {
-    emit(state.copyWith(status: FinishCartStatus.loading));
+  Future<void> enviarTodosPedidos() async {
+    final pedidos = await fetchPedidosPendentes();
 
-    try {
-      final pedido = _montarPedido(desconto);
-      final sucesso = await finishCartRepository.enviarPedido(pedido);
-
-      if (sucesso) {
-        emit(state.copyWith(status: FinishCartStatus.success));
-        return true;
-      } else {
-        emit(state.copyWith(
-          status: FinishCartStatus.error,
-          errorMessage: "Falha ao enviar pedido",
-        ));
-        return false;
-      }
-    } catch (e) {
+    if (pedidos.isEmpty) {
       emit(state.copyWith(
         status: FinishCartStatus.error,
-        errorMessage: e.toString(),
+        errorMessage: "Não há pedidos para enviar.",
       ));
-      return false;
+      return;
+    }
+
+    emit(state.copyWith(status: FinishCartStatus.loading));
+
+    bool todosEnviados = true;
+
+    for (final pedido in pedidos) {
+      final sucesso = await finishCartRepository.enviarPedido(pedido);
+      if (!sucesso) {
+        todosEnviados = false;
+        break;
+      }
+    }
+
+    if (todosEnviados) {
+      emit(state.copyWith(
+        status: FinishCartStatus.success,
+        successMessage: "Todos os pedidos enviados com sucesso!",
+      ));
+      //await _cartDao.clearCarts();
+    } else {
+      emit(state.copyWith(
+        status: FinishCartStatus.error,
+        errorMessage: "Falha ao enviar algum pedido.",
+      ));
     }
   }
+
+
 
   String _formatarValor(double valor) =>
       valor.toStringAsFixed(2).replaceAll('.', ',');
 
- CartModel _montarPedido(double desconto) {
+  CartModel _montarPedido(double desconto) {
     final totalComDesconto = state.total - desconto;
 
     return CartModel(
@@ -162,7 +213,9 @@ class FinishCartCubit extends Cubit<FinishCartState> {
     );
   }
 
-  List<ConsultProductModel> _agruparProdutos(List<ConsultProductModel> produtos) {
+  List<ConsultProductModel> _agruparProdutos(
+    List<ConsultProductModel> produtos,
+  ) {
     final Map<String, ConsultProductModel> map = {};
     for (var p in produtos) {
       if (map.containsKey(p.codigo)) {

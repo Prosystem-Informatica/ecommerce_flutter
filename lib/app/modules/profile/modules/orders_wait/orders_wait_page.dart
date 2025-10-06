@@ -1,39 +1,52 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/database/dao/cart/cart_dao.dart';
 import '../../../../core/ui/widget/list_tile_orders_widget.dart';
-import '../../../../repositories/order/model/order_model.dart';
-import '../../../home/modules/cart/cubit/order/order_bloc_cubit.dart';
-import '../../../home/modules/cart/cubit/order/order_bloc_state.dart';
+import '../../../../repositories/finishCard/model/cart_model.dart';
+import '../../../home/modules/cart/cubit/finishCard/finish_bloc_cubit.dart';
 
-class OrdersWaitPage extends StatefulWidget {
-  const OrdersWaitPage({super.key});
+class LocalOrdersPage extends StatefulWidget {
+  const LocalOrdersPage({super.key});
 
   @override
-  State<OrdersWaitPage> createState() => _OrdersWaitPageState();
+  State<LocalOrdersPage> createState() => _LocalOrdersPageState();
 }
 
-class _OrdersWaitPageState extends State<OrdersWaitPage> {
+class _LocalOrdersPageState extends State<LocalOrdersPage> {
   String searchQuery = '';
+  List<CartModel> localOrders = [];
 
-  List<OrderModel> getFilteredOrders(List<OrderModel> orders) {
+  @override
+  void initState() {
+    super.initState();
+    _loadLocalOrders();
+  }
+
+  Future<void> _loadLocalOrders() async {
+    final dao = CartDao();
+    final pedidos = await dao.getCarts();
+    setState(() {
+      localOrders = pedidos;
+    });
+  }
+
+  List<CartModel> getFilteredOrders(List<CartModel> orders) {
     if (searchQuery.isEmpty) return orders;
     return orders.where((o) {
-      final cliente = o.cliente.toLowerCase();
-      final pedido = o.pedido.toLowerCase();
+      final cliente = o.idCliente.toLowerCase();
+      final pedido = o.numPed.toLowerCase();
       return cliente.contains(searchQuery.toLowerCase()) ||
           pedido.contains(searchQuery.toLowerCase());
     }).toList();
   }
 
   @override
-  void initState() {
-    super.initState();
-    context.read<OrderBlocCubit>().getOrders(implemented: "NAO");
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final cubit = context.read<FinishCartCubit>();
+    final filteredOrders = getFilteredOrders(localOrders);
+
     return Scaffold(
+      appBar: AppBar(title: const Text("Pedidos Locais")),
       body: Stack(
         children: [
           SizedBox.expand(
@@ -71,59 +84,82 @@ class _OrdersWaitPageState extends State<OrdersWaitPage> {
                 ),
               ),
               Expanded(
-                child: BlocBuilder<OrderBlocCubit, OrderBlocState>(
-                  builder: (context, state) {
-                    if (state.status == OrderStateStatus.loading) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
+                child: filteredOrders.isEmpty
+                    ? const Center(child: Text('Nenhum pedido salvo'))
+                    : ListView.separated(
+                  itemCount: filteredOrders.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  itemBuilder: (context, index) {
+                    final order = filteredOrders[index];
 
-                    if (state.status == OrderStateStatus.error) {
-                      return Center(
-                        child: Text(
-                          state.errorMessage ?? 'Erro ao buscar pedidos',
-                        ),
-                      );
-                    }
-
-                    List<OrderModel> orders = state.orderModel ?? [];
-                    if (orders.length == 1 &&
-                        (orders[0].pedido ?? '').isEmpty) {
-                      orders = [];
-                    }
-
-                    final filteredOrders = getFilteredOrders(orders);
-
-                    if (filteredOrders.isEmpty) {
-                      return const Center(
-                        child: Text('Nenhum pedido encontrado'),
-                      );
-                    }
-
-                    return ListView.separated(
-                      itemCount: filteredOrders.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 8),
-                      itemBuilder: (context, index) {
-                        final order = filteredOrders[index];
-
-                        return Card(
-                          color: Colors.lightBlue[50],
-                          elevation: 3,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: ListTileOrdersWidget(
+                    return Card(
+                      color: Colors.lightBlue[50],
+                      elevation: 3,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ListTileOrdersWidget(
                               order: {
-                                'number': order.pedido,
-                                'client': order.cliente,
-                                'total': order.total,
-                                'date': order.data,
+                                'number': order.numPed,
+                                'client': order.idCliente,
+                                'total': order.totalPed,
                               },
                             ),
-                          ),
-                        );
-                      },
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: ElevatedButton(
+                                    onPressed: () async {
+                                      final sucesso = await cubit.finishCartRepository
+                                          .enviarPedido(order);
+                                      if (sucesso) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(const SnackBar(
+                                            content: Text('Pedido enviado!')));
+                                        _loadLocalOrders();
+                                      } else {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(const SnackBar(
+                                            content: Text(
+                                                'Falha ao enviar pedido')));
+                                      }
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.green,
+                                      foregroundColor: Colors.white,
+                                    ),
+                                    child: const Text("Enviar"),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: ElevatedButton(
+                                    onPressed: () async {
+                                      final dao = CartDao();
+                                      await dao.deleteCart(order.numPed);
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Pedido excluído!')),
+                                      );
+                                      _loadLocalOrders();
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.red,
+                                      foregroundColor: Colors.white,
+                                    ),
+                                    child: const Text("Excluir"),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
                     );
                   },
                 ),

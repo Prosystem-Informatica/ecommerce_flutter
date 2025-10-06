@@ -127,10 +127,10 @@ class _OrdersOpenPageState extends State<OrdersOpenPage> {
                                 });
 
                                 final repo =
-                                    context
-                                            .read<OrderBlocCubit>()
-                                            .orderRepository
-                                        as OrderRepository;
+                                context
+                                    .read<OrderBlocCubit>()
+                                    .orderRepository
+                                as OrderRepository;
 
                                 final details = await repo.getOrderDetails(
                                   pedido: order.pedido,
@@ -152,15 +152,17 @@ class _OrdersOpenPageState extends State<OrdersOpenPage> {
                                 final condicao = details.first.condicao;
                                 final forma = details.first.forma;
 
-                                double totalPedido = 0;
+                                double totalItens = 0;
                                 for (var item in details) {
-                                  final t =
-                                      double.tryParse(
-                                        item.total.replaceAll(',', '.'),
-                                      ) ??
-                                      0;
-                                  totalPedido += t;
+                                  totalItens +=
+                                      double.tryParse(item.total.replaceAll(',', '.')) ?? 0;
                                 }
+
+                                final desconto = double.tryParse(order.desconto.replaceAll(',', '.')) ?? 0;
+                                final totalComDesconto = totalItens - desconto;
+
+                                String formatar(double valor) =>
+                                    valor.toStringAsFixed(2).replaceAll('.', ',');
 
                                 await showModalBottomSheet(
                                   context: context,
@@ -173,24 +175,19 @@ class _OrdersOpenPageState extends State<OrdersOpenPage> {
                                   builder: (ctx) {
                                     return Padding(
                                       padding: EdgeInsets.only(
-                                        bottom:
-                                            MediaQuery.of(
-                                              ctx,
-                                            ).viewInsets.bottom,
+                                        bottom: MediaQuery.of(ctx).viewInsets.bottom,
                                       ),
                                       child: Container(
                                         padding: const EdgeInsets.all(16),
                                         height:
-                                            MediaQuery.of(ctx).size.height *
-                                            0.65,
+                                        MediaQuery.of(ctx).size.height * 0.65,
                                         child: Column(
                                           crossAxisAlignment:
-                                              CrossAxisAlignment.start,
+                                          CrossAxisAlignment.start,
                                           children: [
                                             Row(
                                               mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
+                                              MainAxisAlignment.spaceBetween,
                                               children: [
                                                 Text(
                                                   "Pedido #${order.pedido}",
@@ -200,16 +197,19 @@ class _OrdersOpenPageState extends State<OrdersOpenPage> {
                                                   ),
                                                 ),
                                                 IconButton(
-                                                  onPressed:
-                                                      () =>
-                                                          Navigator.of(
-                                                            ctx,
-                                                          ).pop(),
+                                                  onPressed: () =>
+                                                      Navigator.of(ctx).pop(),
                                                   icon: const Icon(Icons.close),
                                                 ),
                                               ],
                                             ),
                                             const SizedBox(height: 8),
+                                            Text(
+                                              "Cliente: ${order.cliente}",
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
                                             Text(
                                               "Condição de Pagamento: $condicao",
                                               style: const TextStyle(
@@ -224,7 +224,13 @@ class _OrdersOpenPageState extends State<OrdersOpenPage> {
                                             ),
                                             const SizedBox(height: 8),
                                             Text(
-                                              "Total do Pedido: R\$ ${totalPedido.toStringAsFixed(2)}",
+                                              "Desconto: R\$ ${formatar(desconto)}",
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            Text(
+                                              "Total do Pedido: R\$ ${formatar(totalComDesconto)}",
                                               style: const TextStyle(
                                                 fontWeight: FontWeight.bold,
                                                 fontSize: 16,
@@ -235,33 +241,22 @@ class _OrdersOpenPageState extends State<OrdersOpenPage> {
                                               child: ListView.separated(
                                                 itemCount: details.length,
                                                 separatorBuilder:
-                                                    (_, __) => const Divider(
-                                                      height: 1,
-                                                    ),
+                                                    (_, __) => const Divider(height: 1),
                                                 itemBuilder: (context, i) {
                                                   final item = details[i];
                                                   return Padding(
-                                                    padding:
-                                                        const EdgeInsets.all(
-                                                          4.0,
-                                                        ),
+                                                    padding: const EdgeInsets.all(4.0),
                                                     child: Column(
                                                       crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
+                                                      CrossAxisAlignment.start,
                                                       children: [
                                                         Text(
                                                           "${item.produto} (COD: ${item.codProd})",
-                                                          style:
-                                                              const TextStyle(
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-                                                              ),
+                                                          style: const TextStyle(
+                                                            fontWeight: FontWeight.bold,
+                                                          ),
                                                         ),
-                                                        const SizedBox(
-                                                          height: 2,
-                                                        ),
+                                                        const SizedBox(height: 2),
                                                         Text(
                                                           "Qtd: ${item.quant} - Unit: R\$ ${item.prcUnit}",
                                                         ),

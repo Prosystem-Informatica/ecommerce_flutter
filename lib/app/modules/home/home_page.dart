@@ -156,7 +156,7 @@ class _DashboardState extends State<Dashboard> {
               const Expanded(
                 child: TabBarView(
                   children: [
-                    OrdersWaitPage(),
+                    LocalOrdersPage(),
                     OrdersOpenPage(),
                     OrdersFinishPage(),
                   ],
