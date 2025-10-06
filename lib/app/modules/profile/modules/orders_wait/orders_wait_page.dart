@@ -116,18 +116,29 @@ class _LocalOrdersPageState extends State<LocalOrdersPage> {
                                 Expanded(
                                   child: ElevatedButton(
                                     onPressed: () async {
-                                      final sucesso = await cubit.finishCartRepository
+                                      final sucesso = await cubit
+                                          .finishCartRepository
                                           .enviarPedido(order);
                                       if (sucesso) {
+                                        final dao = CartDao();
+                                        await dao.deleteCart(order.numPed);
                                         ScaffoldMessenger.of(context)
-                                            .showSnackBar(const SnackBar(
-                                            content: Text('Pedido enviado!')));
+                                            .showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'Pedido enviado e removido do local!',
+                                            ),
+                                          ),
+                                        );
                                         _loadLocalOrders();
                                       } else {
                                         ScaffoldMessenger.of(context)
-                                            .showSnackBar(const SnackBar(
+                                            .showSnackBar(
+                                          const SnackBar(
                                             content: Text(
-                                                'Falha ao enviar pedido')));
+                                                'Falha ao enviar pedido'),
+                                          ),
+                                        );
                                       }
                                     },
                                     style: ElevatedButton.styleFrom(
@@ -143,8 +154,11 @@ class _LocalOrdersPageState extends State<LocalOrdersPage> {
                                     onPressed: () async {
                                       final dao = CartDao();
                                       await dao.deleteCart(order.numPed);
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Pedido excluído!')),
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                            content: Text(
+                                                'Pedido excluído!')),
                                       );
                                       _loadLocalOrders();
                                     },

@@ -16,7 +16,7 @@ class FinishCartCubit extends Cubit<FinishCartState> {
   final SharedPreferences prefs;
   final CustomerRepository customerRepository;
   final FinishCartRepository finishCartRepository;
-  CartDao _cartDao = CartDao();
+  final CartDao _cartDao = CartDao();
 
   FinishCartCubit({
     required this.paymentRepository,
@@ -24,11 +24,12 @@ class FinishCartCubit extends Cubit<FinishCartState> {
     required this.customerRepository,
     required this.finishCartRepository,
   }) : super(
-         FinishCartState.initial().copyWith(
-           vendedorLogin: prefs.getString('userCodigo') ?? '',
-           empresaId: prefs.getString('companyCodigo') ?? '',
-         ),
-       );
+    FinishCartState.initial().copyWith(
+      vendedorLogin: prefs.getString('userCodigo') ?? '',
+      empresaId: prefs.getString('companyCodigo') ?? '',
+    ),
+  );
+
 
   void setCliente(CustomerModel cliente) {
     emit(state.copyWith(cliente: cliente));
@@ -72,16 +73,15 @@ class FinishCartCubit extends Cubit<FinishCartState> {
     );
   }
 
+
   Future<List<CustomerModel>> fetchClientes() async {
     try {
       return await customerRepository.getCustomers();
     } catch (e) {
-      emit(
-        state.copyWith(
-          status: FinishCartStatus.error,
-          errorMessage: e.toString(),
-        ),
-      );
+      emit(state.copyWith(
+        status: FinishCartStatus.error,
+        errorMessage: e.toString(),
+      ));
       return [];
     }
   }
@@ -90,12 +90,10 @@ class FinishCartCubit extends Cubit<FinishCartState> {
     try {
       return await paymentRepository.getCondicoesPagamento();
     } catch (e) {
-      emit(
-        state.copyWith(
-          status: FinishCartStatus.error,
-          errorMessage: e.toString(),
-        ),
-      );
+      emit(state.copyWith(
+        status: FinishCartStatus.error,
+        errorMessage: e.toString(),
+      ));
       return [];
     }
   }
@@ -104,15 +102,26 @@ class FinishCartCubit extends Cubit<FinishCartState> {
     try {
       return await paymentRepository.getTiposPagamento();
     } catch (e) {
-      emit(
-        state.copyWith(
-          status: FinishCartStatus.error,
-          errorMessage: e.toString(),
-        ),
-      );
+      emit(state.copyWith(
+        status: FinishCartStatus.error,
+        errorMessage: e.toString(),
+      ));
       return [];
     }
   }
+
+  Future<List<CartModel>> fetchPedidosPendentes() async {
+    try {
+      return await _cartDao.getCarts();
+    } catch (e) {
+      emit(state.copyWith(
+        status: FinishCartStatus.error,
+        errorMessage: "Erro ao buscar pedidos: $e",
+      ));
+      return [];
+    }
+  }
+
 
   Future<void> salvarLocalmente(double desconto) async {
     final pedido = _montarPedido(desconto);
@@ -132,67 +141,65 @@ class FinishCartCubit extends Cubit<FinishCartState> {
     }
   }
 
-  Future<List<CartModel>> fetchPedidosPendentes() async {
+
+  Future<void> enviarTodosPedidos() async {
+    emit(state.copyWith(status: FinishCartStatus.loading));
+
     try {
-      final pedidos = await _cartDao.getCarts();
-      return pedidos;
+      final pedidos = await fetchPedidosPendentes();
+
+      if (pedidos.isEmpty) {
+        emit(state.copyWith(
+          status: FinishCartStatus.error,
+          errorMessage: "Não há pedidos para enviar.",
+        ));
+        return;
+      }
+
+      bool todosEnviados = true;
+
+      for (final pedido in pedidos) {
+        final sucesso = await finishCartRepository.enviarPedido(pedido);
+        if (sucesso) {
+          await _cartDao.deleteCart(pedido.numPed);
+        } else {
+          todosEnviados = false;
+          break;
+        }
+      }
+
+      if (todosEnviados) {
+        emit(state.copyWith(
+          status: FinishCartStatus.success,
+          successMessage: "Todos os pedidos enviados com sucesso!",
+        ));
+      } else {
+        emit(state.copyWith(
+          status: FinishCartStatus.error,
+          errorMessage: "Falha ao enviar algum pedido.",
+        ));
+      }
     } catch (e) {
       emit(state.copyWith(
         status: FinishCartStatus.error,
-        errorMessage: "Erro ao buscar pedidos: $e",
-      ));
-      return [];
-    }
-  }
-
-  Future<void> enviarTodosPedidos() async {
-    final pedidos = await fetchPedidosPendentes();
-
-    if (pedidos.isEmpty) {
-      emit(state.copyWith(
-        status: FinishCartStatus.error,
-        errorMessage: "Não há pedidos para enviar.",
-      ));
-      return;
-    }
-
-    emit(state.copyWith(status: FinishCartStatus.loading));
-
-    bool todosEnviados = true;
-
-    for (final pedido in pedidos) {
-      final sucesso = await finishCartRepository.enviarPedido(pedido);
-      if (!sucesso) {
-        todosEnviados = false;
-        break;
-      }
-    }
-
-    if (todosEnviados) {
-      emit(state.copyWith(
-        status: FinishCartStatus.success,
-        successMessage: "Todos os pedidos enviados com sucesso!",
-      ));
-      //await _cartDao.clearCarts();
-    } else {
-      emit(state.copyWith(
-        status: FinishCartStatus.error,
-        errorMessage: "Falha ao enviar algum pedido.",
+        errorMessage: "Erro ao enviar pedidos: $e",
       ));
     }
   }
-
 
 
   String _formatarValor(double valor) =>
       valor.toStringAsFixed(2).replaceAll('.', ',');
+
+
+  String _gerarNumeroPedido() => DateTime.now().millisecondsSinceEpoch.toString();
 
   CartModel _montarPedido(double desconto) {
     final totalComDesconto = state.total - desconto;
 
     return CartModel(
       idEmpresa: state.empresaId,
-      numPed: "",
+      numPed: _gerarNumeroPedido(),
       idVendedor: state.vendedorLogin,
       idCliente: state.cliente?.codigo ?? "",
       idTpPag: state.tipoPagamento?.codigo ?? "",
@@ -213,9 +220,7 @@ class FinishCartCubit extends Cubit<FinishCartState> {
     );
   }
 
-  List<ConsultProductModel> _agruparProdutos(
-    List<ConsultProductModel> produtos,
-  ) {
+  List<ConsultProductModel> _agruparProdutos(List<ConsultProductModel> produtos) {
     final Map<String, ConsultProductModel> map = {};
     for (var p in produtos) {
       if (map.containsKey(p.codigo)) {
@@ -227,6 +232,7 @@ class FinishCartCubit extends Cubit<FinishCartState> {
     return map.values.toList();
   }
 }
+
 
 extension ProdutoHelpers on ConsultProductModel {
   int get quantidadePositiva => quantidade > 0 ? quantidade : 1;

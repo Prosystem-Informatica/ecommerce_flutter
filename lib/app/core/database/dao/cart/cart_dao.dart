@@ -36,10 +36,14 @@ class CartDao {
   Future<int> saveCart(CartModel cart) async {
     final Database db = await getDatabase();
 
-    await db.insert(_tableCart, _toMapCart(cart));
+    final numPed = cart.numPed.isEmpty ? await gerarNumeroPedidoSequencial() : cart.numPed;
 
-    for (final produto in cart.produtos) {
-      await db.insert(_tableCartOrder, _toMapCartOrder(cart.numPed, produto));
+    final cartWithNumPed = cart.copyWith(numPed: numPed);
+
+    await db.insert(_tableCart, _toMapCart(cartWithNumPed));
+
+    for (final produto in cartWithNumPed.produtos) {
+      await db.insert(_tableCartOrder, _toMapCartOrder(cartWithNumPed.numPed, produto));
     }
 
     return 1;
@@ -58,8 +62,7 @@ class CartDao {
         whereArgs: [numPed],
       );
 
-      final List<CartOrderModel> produtos =
-      resultProducts.map((p) {
+      final List<CartOrderModel> produtos = resultProducts.map((p) {
         return CartOrderModel(
           idProduto: p['idProduto'],
           quantidade: p['quantidade'],
@@ -86,6 +89,25 @@ class CartDao {
     return carts;
   }
 
+  Future<int> deleteCart(String numPed) async {
+    final Database db = await getDatabase();
+    return await db.delete(
+      _tableCart,
+      where: 'numPed = ?',
+      whereArgs: [numPed],
+    );
+  }
+
+  Future<String> gerarNumeroPedidoSequencial() async {
+    final Database db = await getDatabase();
+
+    final result = await db.rawQuery('SELECT MAX(CAST(numPed AS INTEGER)) as maxNum FROM $_tableCart');
+    final maxNum = result.first['maxNum'];
+
+    if (maxNum == null) return '1';
+    return ((int.tryParse(maxNum.toString()) ?? 0) + 1).toString();
+  }
+
   Map<String, dynamic> _toMapCart(CartModel cart) {
     return {
       'idEmpresa': cart.idEmpresa,
@@ -100,16 +122,6 @@ class CartDao {
     };
   }
 
-  Future<int> deleteCart(String numPed) async {
-    final Database db = await getDatabase();
-    return await db.delete(
-      _tableCart,
-      where: 'numPed = ?',
-      whereArgs: [numPed],
-    );
-  }
-
-
   Map<String, dynamic> _toMapCartOrder(String numPed, CartOrderModel order) {
     return {
       'numPed': numPed,
@@ -119,3 +131,4 @@ class CartDao {
     };
   }
 }
+
