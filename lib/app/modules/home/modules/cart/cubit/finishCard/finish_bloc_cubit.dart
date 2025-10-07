@@ -142,47 +142,65 @@ class FinishCartCubit extends Cubit<FinishCartState> {
   }
 
 
-  Future<void> enviarTodosPedidos() async {
+  Future<bool> enviarTodosPedidos() async {
+    final pedidos = await fetchPedidosPendentes();
+
+    if (pedidos.isEmpty) return false;
+
+    bool todosEnviados = true;
+
     emit(state.copyWith(status: FinishCartStatus.loading));
 
-    try {
-      final pedidos = await fetchPedidosPendentes();
-
-      if (pedidos.isEmpty) {
-        emit(state.copyWith(
-          status: FinishCartStatus.error,
-          errorMessage: "Não há pedidos para enviar.",
-        ));
-        return;
-      }
-
-      bool todosEnviados = true;
-
-      for (final pedido in pedidos) {
-        final sucesso = await finishCartRepository.enviarPedido(pedido);
-        if (sucesso) {
-          await _cartDao.deleteCart(pedido.numPed);
-        } else {
-          todosEnviados = false;
-          break;
-        }
-      }
-
-      if (todosEnviados) {
-        emit(state.copyWith(
-          status: FinishCartStatus.success,
-          successMessage: "Todos os pedidos enviados com sucesso!",
-        ));
+    for (final pedido in pedidos) {
+      final sucesso = await finishCartRepository.enviarPedido(pedido);
+      if (!sucesso) {
+        todosEnviados = false;
+        break;
       } else {
-        emit(state.copyWith(
-          status: FinishCartStatus.error,
-          errorMessage: "Falha ao enviar algum pedido.",
-        ));
+        await _cartDao.deleteCart(pedido.numPed);
       }
+    }
+
+    emit(state.copyWith(status: FinishCartStatus.initial));
+
+    return todosEnviados;
+  }
+
+  Future<void> atualizarPedidoLocal(CartModel pedidoAtualizado) async {
+    try {
+      await _cartDao.deleteCart(pedidoAtualizado.numPed);
+      await _cartDao.saveCart(pedidoAtualizado);
+      emit(state.copyWith(
+        status: FinishCartStatus.success,
+        successMessage: "Pedido atualizado com sucesso!",
+      ));
     } catch (e) {
       emit(state.copyWith(
         status: FinishCartStatus.error,
-        errorMessage: "Erro ao enviar pedidos: $e",
+        errorMessage: "Erro ao atualizar pedido: $e",
+      ));
+    }
+  }
+
+  void limparMensagens() {
+    emit(state.copyWith(
+      successMessage: '',
+      errorMessage: '',
+      status: FinishCartStatus.initial,
+    ));
+  }
+
+  Future<void> excluirPedidoLocal(String numPed) async {
+    try {
+      await _cartDao.deleteCart(numPed);
+      emit(state.copyWith(
+        status: FinishCartStatus.success,
+        successMessage: "Pedido excluído com sucesso!",
+      ));
+    } catch (e) {
+      emit(state.copyWith(
+        status: FinishCartStatus.error,
+        errorMessage: "Erro ao excluir pedido: $e",
       ));
     }
   }

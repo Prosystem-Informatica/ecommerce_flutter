@@ -1,6 +1,6 @@
 import 'package:ecommerce/app/modules/profile/modules/orders_finish/orders_finish_page.dart';
 import 'package:ecommerce/app/modules/profile/modules/orders_open/orders_open_page.dart';
-import 'package:ecommerce/app/modules/profile/modules/orders_wait/orders_wait_page.dart';
+import 'package:ecommerce/app/modules/profile/modules/orders_wait/orders_local_page.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
