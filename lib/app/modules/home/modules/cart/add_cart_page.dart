@@ -19,8 +19,7 @@ class ProductListPage extends StatefulWidget {
   State<ProductListPage> createState() => _ProductListPageState();
 }
 
-class _ProductListPageState extends State<ProductListPage>
-    with TickerProviderStateMixin {
+class _ProductListPageState extends State<ProductListPage> {
   String searchQuery = '';
   bool isGrid = false;
   List<CartItem> cart = [];
@@ -30,16 +29,13 @@ class _ProductListPageState extends State<ProductListPage>
   void initState() {
     super.initState();
     final cubit = context.read<FinishCartCubit>();
-    cart =
-        cubit.state.produtos
-            .map((p) => CartItem(product: p, quantity: p.quantidade))
-            .toList();
+    cart = cubit.state.produtos
+        .map((p) => CartItem(product: p, quantity: p.quantidade))
+        .toList();
   }
 
   void addToCart(ConsultProductModel product) {
-    final index = cart.indexWhere(
-          (item) => item.product.codigo == product.codigo,
-    );
+    final index = cart.indexWhere((item) => item.product.codigo == product.codigo);
     if (index >= 0) {
       setState(() => cart[index].quantity++);
     } else {
@@ -48,9 +44,7 @@ class _ProductListPageState extends State<ProductListPage>
   }
 
   void removeFromCart(ConsultProductModel product) {
-    final index = cart.indexWhere(
-          (item) => item.product.codigo == product.codigo,
-    );
+    final index = cart.indexWhere((item) => item.product.codigo == product.codigo);
     if (index >= 0) {
       setState(() {
         if (cart[index].quantity > 1) {
@@ -63,9 +57,7 @@ class _ProductListPageState extends State<ProductListPage>
   }
 
   void addToCartWithQuantity(ConsultProductModel product, int quantity) {
-    final index = cart.indexWhere(
-          (item) => item.product.codigo == product.codigo,
-    );
+    final index = cart.indexWhere((item) => item.product.codigo == product.codigo);
     if (index >= 0) {
       setState(() => cart[index].quantity += quantity);
     } else {
@@ -73,21 +65,17 @@ class _ProductListPageState extends State<ProductListPage>
     }
   }
 
-  int get totalItems =>
-      cart.fold(0, (sum, item) => sum + item.quantity);
+  int get totalItems => cart.fold(0, (sum, item) => sum + item.quantity);
 
-  double get totalPrice =>
-      cart.fold(0.0, (sum, item) {
-        final price = double.tryParse(item.product.preco.replaceAll(',', '.')) ?? 0.0;
-        return sum + price * item.quantity;
-      });
+  double get totalPrice => cart.fold(0.0, (sum, item) {
+    final price = double.tryParse(item.product.preco.replaceAll(',', '.')) ?? 0.0;
+    return sum + price * item.quantity;
+  });
 
   void _openCartModal() async {
     final cubit = context.read<FinishCartCubit>();
 
-    final selectedProducts = await showModalBottomSheet<
-        List<ConsultProductModel>
-    >(
+    final selectedProducts = await showModalBottomSheet<List<ConsultProductModel>>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.white,
@@ -95,13 +83,14 @@ class _ProductListPageState extends State<ProductListPage>
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (_) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return Container(
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height * 0.6,
-              ),
-              padding: const EdgeInsets.all(16),
+        return StatefulBuilder(builder: (context, setModalState) {
+          return SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+                  left: 16,
+                  right: 16,
+                  top: 16),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -111,88 +100,78 @@ class _ProductListPageState extends State<ProductListPage>
                       const Text(
                         "Carrinho",
                         style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+                            fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       IconButton(
                         icon: const Icon(Icons.close),
-                        onPressed:
-                            () =>
+                        onPressed: () =>
                             Navigator.pop(context, <ConsultProductModel>[]),
                       ),
                     ],
                   ),
                   const Divider(),
-                  Expanded(
-                    child:
-                    cart.isEmpty
-                        ? const Center(child: Text('Carrinho vazio'))
-                        : ListView.builder(
-                      itemCount: cart.length,
-                      itemBuilder: (_, index) {
-                        final item = cart[index];
-                        return ListTile(
-                          leading: Image.network(
-                            item.product.imagem,
-                            width: 40,
-                            height: 40,
-                            fit: BoxFit.cover,
-                            errorBuilder:
-                                (_, __, ___) =>
-                                Image.asset('assets/no-image.jpeg'),
-                          ),
-                          title: Text(item.product.produto),
-                          subtitle: Text(
-                            "Qtd: ${item.quantity} • R\$ ${item.product.preco}",
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.remove_circle,
-                                  color: Colors.red,
-                                ),
-                                onPressed: () {
-                                  removeFromCart(item.product);
-                                  setModalState(() {});
-                                },
-                              ),
-                              Text(
-                                '${item.quantity}',
-                                style: const TextStyle(fontSize: 16),
-                              ),
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.add_circle,
-                                  color: Colors.green,
-                                ),
-                                onPressed: () {
-                                  addToCart(item.product);
-                                  setModalState(() {});
-                                },
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
+                  cart.isEmpty
+                      ? const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 30),
+                    child: Center(child: Text('Carrinho vazio')),
+                  )
+                      : ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: cart.length,
+                    itemBuilder: (_, index) {
+                      final item = cart[index];
+                      return ListTile(
+                        leading: Image.network(
+                          item.product.imagem,
+                          width: 40,
+                          height: 40,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) =>
+                              Image.asset('assets/no-image.jpeg'),
+                        ),
+                        title: Text(item.product.produto),
+                        subtitle: Text(
+                          "Qtd: ${item.quantity} • R\$ ${item.product.preco}",
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.remove_circle,
+                                  color: Colors.red),
+                              onPressed: () {
+                                removeFromCart(item.product);
+                                setModalState(() {});
+                              },
+                            ),
+                            Text('${item.quantity}',
+                                style: const TextStyle(fontSize: 16)),
+                            IconButton(
+                              icon: const Icon(Icons.add_circle,
+                                  color: Colors.green),
+                              onPressed: () {
+                                addToCart(item.product);
+                                setModalState(() {});
+                              },
+                            ),
+                          ],
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 10),
                   Text(
                     "Total: R\$ ${totalPrice.toStringAsFixed(2).replaceAll('.', ',')}",
                     style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                        fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 10),
-                  Center(
+                  SizedBox(
+                    width: double.infinity,
                     child: ElevatedButton.icon(
                       onPressed: () {
-                        final productsToAdd =
-                        cart.map((e) {
+                        final productsToAdd = cart.map((e) {
                           e.product.quantidade = e.quantity;
                           return e.product;
                         }).toList();
@@ -202,23 +181,24 @@ class _ProductListPageState extends State<ProductListPage>
                       icon: const Icon(Icons.check),
                       label: const Text(
                         "Adicionar",
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.bold),
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green,
                         foregroundColor: Colors.white,
-                        minimumSize: const Size(150, 40),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                     ),
                   ),
                 ],
               ),
-            );
-          },
-        );
+            ),
+          );
+        });
       },
     );
 
@@ -229,9 +209,8 @@ class _ProductListPageState extends State<ProductListPage>
 
   void _openProductModal(ConsultProductModel product) {
     int quantity = 1;
-    final TextEditingController quantityController = TextEditingController(
-      text: quantity.toString(),
-    );
+    final TextEditingController quantityController =
+    TextEditingController(text: quantity.toString());
 
     showModalBottomSheet(
       context: context,
@@ -241,146 +220,144 @@ class _ProductListPageState extends State<ProductListPage>
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setStateModal) {
-            double preco =
-                double.tryParse(product.preco.replaceAll(',', '.')) ?? 0.0;
+        return StatefulBuilder(builder: (context, setStateModal) {
+          double preco =
+              double.tryParse(product.preco.replaceAll(',', '.')) ?? 0.0;
 
-            return Padding(
+          return SingleChildScrollView(
+            child: Padding(
               padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewInsets.bottom,
-              ),
-              child: SizedBox(
-                height: MediaQuery.of(context).size.height * 0.5,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.close),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                      ],
-                    ),
-                    Image.network(
-                      product.imagem,
-                      height: 150,
-                      fit: BoxFit.contain,
-                      errorBuilder:
-                          (_, __, ___) =>
-                          Image.asset('assets/no-image.jpeg', height: 150),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      product.produto,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                  bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+                  left: 16,
+                  right: 16,
+                  top: 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(context),
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      "Código: ${product.codigo}",
-                      style: const TextStyle(fontSize: 14),
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        IconButton(
-                          onPressed: () {
-                            if (quantity > 1) {
-                              setStateModal(() {
-                                quantity--;
-                                quantityController.text = quantity.toString();
-                              });
-                            }
-                          },
-                          icon: const Icon(
-                            Icons.remove_circle,
-                            color: Colors.red,
-                          ),
-                        ),
-                        SizedBox(
-                          width: 60,
-                          child: TextField(
-                            controller: quantityController,
-                            textAlign: TextAlign.center,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              border: OutlineInputBorder(),
-                              isDense: true,
-                              contentPadding: EdgeInsets.symmetric(
-                                vertical: 8,
-                                horizontal: 4,
-                              ),
-                            ),
-                            onTap: () {
-                              quantityController.selection = TextSelection(
-                                baseOffset: 0,
-                                extentOffset: quantityController.text.length,
-                              );
-                            },
-                            onChanged: (value) {
-                              int? val = int.tryParse(value);
-                              if (val != null && val > 0) {
-                                setStateModal(() => quantity = val);
-                              } else {
-                                setStateModal(() => quantity = 1);
-                                quantityController.text = '1';
-                              }
-                            },
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () {
+                    ],
+                  ),
+
+
+                  Image.network(
+                    product.imagem,
+                    height: 150,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) =>
+                        Image.asset('assets/no-image.jpeg', height: 150),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  Text(
+                    product.produto,
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 5),
+                  Text("Código: ${product.codigo}",
+                      style: const TextStyle(fontSize: 14)),
+                  const SizedBox(height: 20),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        onPressed: () {
+                          if (quantity > 1) {
                             setStateModal(() {
-                              quantity++;
+                              quantity--;
                               quantityController.text = quantity.toString();
                             });
-                          },
-                          icon: const Icon(
-                            Icons.add_circle,
-                            color: Colors.green,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      "Total: R\$ ${(preco * quantity).toStringAsFixed(2).replaceAll('.', ',')}",
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                          }
+                        },
+                        icon:
+                        const Icon(Icons.remove_circle, color: Colors.red),
                       ),
-                    ),
-                    const SizedBox(height: 20),
-                    ElevatedButton(
+                      SizedBox(
+                        width: 60,
+                        child: TextField(
+                          controller: quantityController,
+                          textAlign: TextAlign.center,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            border: OutlineInputBorder(),
+                            isDense: true,
+                            contentPadding:
+                            EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                          ),
+                          onTap: () {
+                            quantityController.selection = TextSelection(
+                              baseOffset: 0,
+                              extentOffset: quantityController.text.length,
+                            );
+                          },
+                          onChanged: (value) {
+                            int? val = int.tryParse(value);
+                            if (val != null && val > 0) {
+                              setStateModal(() => quantity = val);
+                            } else {
+                              setStateModal(() => quantity = 1);
+                              quantityController.text = '1';
+                            }
+                          },
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () {
+                          setStateModal(() {
+                            quantity++;
+                            quantityController.text = quantity.toString();
+                          });
+                        },
+                        icon: const Icon(Icons.add_circle, color: Colors.green),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  Text(
+                    "Total: R\$ ${(preco * quantity).toStringAsFixed(2).replaceAll('.', ',')}",
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
                       onPressed: () {
                         addToCartWithQuantity(product, quantity);
                         Navigator.pop(context);
                       },
-                      child: const Text(
-                        "Ok",
-                        style: TextStyle(color: Colors.white),
-                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green,
-                        minimumSize: const Size(120, 40),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
+                      child: const Text(
+                        "Ok",
+                        style: TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            );
-          },
-        );
+            ),
+          );
+        });
       },
     );
   }
@@ -413,8 +390,7 @@ class _ProductListPageState extends State<ProductListPage>
                     border: const OutlineInputBorder(),
                     filled: true,
                     fillColor: Colors.white,
-                    suffixIcon:
-                    searchQuery.isNotEmpty
+                    suffixIcon: searchQuery.isNotEmpty
                         ? IconButton(
                       icon: const Icon(Icons.clear),
                       onPressed: () => setState(() => searchQuery = ''),
@@ -425,10 +401,7 @@ class _ProductListPageState extends State<ProductListPage>
                 ),
               ),
               Expanded(
-                child: BlocBuilder<
-                    ConsultProductBlocCubit,
-                    ConsultProductBlocState
-                >(
+                child: BlocBuilder<ConsultProductBlocCubit, ConsultProductBlocState>(
                   builder: (context, state) {
                     if (state.status == ConsultProductStateStatus.loading) {
                       return const Center(child: CircularProgressIndicator());
@@ -440,29 +413,17 @@ class _ProductListPageState extends State<ProductListPage>
                       );
                     }
 
-                    final products =
-                    (state.products ?? [])
-                        .where(
-                          (p) =>
-                      p.produto.toLowerCase().contains(
-                        searchQuery.toLowerCase(),
-                      ) ||
-                          p.codigo.toLowerCase().contains(
-                            searchQuery.toLowerCase(),
-                          ),
-                    )
-                        .toList();
+                    final products = (state.products ?? []).where((p) =>
+                    p.produto.toLowerCase().contains(searchQuery.toLowerCase()) ||
+                        p.codigo.toLowerCase().contains(searchQuery.toLowerCase())).toList();
 
                     if (products.isEmpty) {
-                      return const Center(
-                        child: Text('Nenhum produto encontrado'),
-                      );
+                      return const Center(child: Text('Nenhum produto encontrado'));
                     }
 
                     if (isGrid) {
                       return GridView.builder(
-                        gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
                           childAspectRatio: 0.75,
                         ),
@@ -480,28 +441,18 @@ class _ProductListPageState extends State<ProductListPage>
                                     child: Image.network(
                                       product.imagem,
                                       fit: BoxFit.cover,
-                                      errorBuilder:
-                                          (_, __, ___) => Image.asset(
-                                        'assets/no-image.jpeg',
-                                      ),
+                                      errorBuilder: (_, __, ___) =>
+                                          Image.asset('assets/no-image.jpeg'),
                                     ),
                                   ),
                                   Padding(
                                     padding: const EdgeInsets.all(8.0),
                                     child: Column(
                                       children: [
-                                        Text(
-                                          product.produto,
-                                          textAlign: TextAlign.center,
-                                          style: const TextStyle(
-                                            color: Colors.black,
-                                          ),
-                                        ),
+                                        Text(product.produto,
+                                            textAlign: TextAlign.center),
                                         Text(
                                           "R\$ ${product.preco} • Estoque: ${product.estoque}",
-                                          style: const TextStyle(
-                                            color: Colors.black,
-                                          ),
                                         ),
                                       ],
                                     ),
@@ -528,17 +479,12 @@ class _ProductListPageState extends State<ProductListPage>
                               width: 50,
                               height: 50,
                               fit: BoxFit.cover,
-                              errorBuilder:
-                                  (_, __, ___) =>
+                              errorBuilder: (_, __, ___) =>
                                   Image.asset('assets/no-image.jpeg'),
                             ),
-                            title: Text(
-                              product.produto,
-                              style: const TextStyle(color: Colors.black),
-                            ),
+                            title: Text(product.produto),
                             subtitle: Text(
                               "Código: ${product.codigo} • R\$ ${product.preco} • Estoque: ${product.estoque}",
-                              style: const TextStyle(color: Colors.black),
                             ),
                           ),
                         );
@@ -553,7 +499,7 @@ class _ProductListPageState extends State<ProductListPage>
       ),
       bottomNavigationBar: Container(
         color: Colors.transparent,
-        padding: const EdgeInsets.all(30),
+        padding: const EdgeInsets.all(16),
         child: Stack(
           clipBehavior: Clip.none,
           children: [
@@ -561,11 +507,11 @@ class _ProductListPageState extends State<ProductListPage>
               key: _cartButtonKey,
               onPressed: _openCartModal,
               icon: const Icon(Icons.shopping_cart),
-              label: const Text("Carrinho", style: TextStyle(color: Colors.white)),
+              label: const Text("Carrinho"),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Theme.of(context).colorScheme.primary,
                 foregroundColor: Colors.white,
-                minimumSize: const Size(double.infinity, 40),
+                minimumSize: const Size(double.infinity, 50),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(15),
                 ),
@@ -574,16 +520,16 @@ class _ProductListPageState extends State<ProductListPage>
             ),
             if (totalItems > 0)
               Positioned(
-                right: 1,
-                top: -10  ,
+                right: 0,
+                top: -10,
                 child: Container(
                   padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: Colors.red,
                     shape: BoxShape.circle,
                   ),
                   child: Text(
-                    '${cart.length}',
+                    '$totalItems',
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
