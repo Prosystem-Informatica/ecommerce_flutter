@@ -4,8 +4,8 @@ import '../../../../core/database/dao/cart/cart_dao.dart';
 import '../../../../core/ui/widget/list_tile_orders_widget.dart';
 import '../../../../repositories/finishCard/model/cart_model.dart';
 import '../../../home/modules/cart/cubit/finishCard/finish_bloc_cubit.dart';
-import '../../../home/modules/cart/finish_cart_page.dart';
 import '../../../../core/ui/helpers/messages.dart';
+import '../../../home/modules/cart/finish_cart_page.dart';
 
 class LocalOrdersPage extends StatefulWidget {
   const LocalOrdersPage({super.key});
@@ -22,9 +22,27 @@ class _LocalOrdersPageState extends State<LocalOrdersPage>
   List<CartModel> localOrders = [];
   bool _modalAberto = false;
 
+  @override
+  void initState() {
+    super.initState();
+    _loadLocalOrders();
+    LocalOrdersPage.updateNotifier.addListener(_onUpdate);
+  }
+
+  @override
+  void dispose() {
+    LocalOrdersPage.updateNotifier.removeListener(_onUpdate);
+    super.dispose();
+  }
+
+  void _onUpdate() {
+    _loadLocalOrders();
+  }
+
   Future<void> _loadLocalOrders() async {
     final dao = CartDao();
     final pedidos = await dao.getCarts();
+    if (!mounted) return;
     setState(() {
       localOrders = pedidos;
     });
@@ -45,6 +63,11 @@ class _LocalOrdersPageState extends State<LocalOrdersPage>
     _modalAberto = true;
 
     final cubit = context.read<FinishCartCubit>();
+
+    final clientesMap = {for (var c in cubit.clientesLista) c.codigo: c.cliente};
+    final produtosMap = {for (var p in cubit.produtosLista) p.codigo: p.produto};
+    final condicoesMap = {for (var c in cubit.condicoesPagamento) c.codigo: c.descricao ?? ''};
+    final tiposMap = {for (var t in cubit.tiposPagamento) t.codigo: t.descricao ?? ''};
 
     await showModalBottomSheet(
       context: context,
@@ -83,11 +106,11 @@ class _LocalOrdersPageState extends State<LocalOrdersPage>
                   ],
                 ),
                 const SizedBox(height: 8),
-                Text("Cliente: ${order.idCliente}",
+                Text("Cliente: ${clientesMap[order.idCliente] ?? order.idCliente}",
                     style: const TextStyle(fontWeight: FontWeight.bold)),
-                Text("Forma de Pagamento: ${order.idTpPag}",
+                Text("Forma de Pagamento: ${tiposMap[order.idTpPag] ?? order.idTpPag}",
                     style: const TextStyle(fontWeight: FontWeight.bold)),
-                Text("Condição: ${order.idCondPag}",
+                Text("Condição: ${condicoesMap[order.idCondPag] ?? order.idCondPag}",
                     style: const TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 Text("Desconto: R\$ ${formatar(desconto)}",
@@ -109,7 +132,7 @@ class _LocalOrdersPageState extends State<LocalOrdersPage>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text("Produto: ${item.idProduto}",
+                            Text("Produto: ${produtosMap[item.idProduto] ?? item.idProduto}",
                                 style: const TextStyle(fontWeight: FontWeight.bold)),
                             const SizedBox(height: 2),
                             Text("Qtd: ${item.quantidade}"),
@@ -132,13 +155,15 @@ class _LocalOrdersPageState extends State<LocalOrdersPage>
                         onPressed: () async {
                           cubit.limparMensagens();
                           Navigator.of(ctx).pop();
-                          await Navigator.push<bool>(
+                          final atualizado = await Navigator.push<bool>(
                             context,
                             MaterialPageRoute(
                               builder: (_) => const FinishCartPage(),
                             ),
                           );
-                          _loadLocalOrders();
+                          if (atualizado == true) {
+                            _loadLocalOrders();
+                          }
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.orange,
@@ -153,11 +178,6 @@ class _LocalOrdersPageState extends State<LocalOrdersPage>
                         label: const Text("Excluir"),
                         onPressed: () async {
                           await cubit.excluirPedidoLocal(order.numPed);
-                          if ((cubit.state.successMessage ?? '').isNotEmpty) {
-                            showSuccess(cubit.state.successMessage!);
-                          } else if ((cubit.state.errorMessage ?? '').isNotEmpty) {
-                            showError(cubit.state.errorMessage!);
-                          }
                           cubit.limparMensagens();
                           Navigator.of(ctx).pop();
                           _loadLocalOrders();
@@ -182,7 +202,7 @@ class _LocalOrdersPageState extends State<LocalOrdersPage>
 
   @override
   Widget build(BuildContext context) {
-    final cubit = context.read<FinishCartCubit>();
+    final filteredOrders = getFilteredOrders(localOrders);
 
     return Scaffold(
       body: Stack(
@@ -214,45 +234,40 @@ class _LocalOrdersPageState extends State<LocalOrdersPage>
                 ),
               ),
               Expanded(
-                child: ValueListenableBuilder<bool>(
-                  valueListenable: LocalOrdersPage.updateNotifier,
-                  builder: (context, value, _) {
-                    _loadLocalOrders();
-                    final filteredOrders = getFilteredOrders(localOrders);
+                child: filteredOrders.isEmpty
+                    ? const Center(child: Text('Nenhum pedido salvo'))
+                    : ListView.separated(
+                  itemCount: filteredOrders.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  itemBuilder: (context, index) {
+                    final order = filteredOrders[index];
 
-                    return filteredOrders.isEmpty
-                        ? const Center(child: Text('Nenhum pedido salvo'))
-                        : ListView.separated(
-                      itemCount: filteredOrders.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 8),
-                      itemBuilder: (context, index) {
-                        final order = filteredOrders[index];
-                        return Padding(
-                          padding:
-                          const EdgeInsets.symmetric(horizontal: 8),
-                          child: Card(
-                            color: Colors.lightBlue[50],
-                            elevation: 3,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(12),
-                              onTap: () => _abrirDetalhes(order),
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: ListTileOrdersWidget(
-                                  order: {
-                                    'number': order.numPed,
-                                    'client': order.idCliente,
-                                    'total': order.totalPed,
-                                  },
-                                ),
-                              ),
+                    final cubit = context.read<FinishCartCubit>();
+                    final clientesMap = {for (var c in cubit.clientesLista) c.codigo: c.cliente};
+
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Card(
+                        color: Colors.lightBlue[50],
+                        elevation: 3,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(12),
+                          onTap: () => _abrirDetalhes(order),
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: ListTileOrdersWidget(
+                              order: {
+                                'number': order.numPed,
+                                'client': clientesMap[order.idCliente] ?? order.idCliente,
+                                'total': order.totalPed,
+                              },
                             ),
                           ),
-                        );
-                      },
+                        ),
+                      ),
                     );
                   },
                 ),
@@ -270,6 +285,7 @@ class _LocalOrdersPageState extends State<LocalOrdersPage>
                   style: TextStyle(color: Colors.white),
                 ),
                 onPressed: () async {
+                  final cubit = context.read<FinishCartCubit>();
                   final sucesso = await cubit.enviarTodosPedidos();
                   if (sucesso) {
                     showSuccess("Todos os pedidos foram enviados!");

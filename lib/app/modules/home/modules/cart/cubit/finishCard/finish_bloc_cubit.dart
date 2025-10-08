@@ -18,6 +18,11 @@ class FinishCartCubit extends Cubit<FinishCartState> {
   final FinishCartRepository finishCartRepository;
   final CartDao _cartDao = CartDao();
 
+  List<CustomerModel> clientesLista = [];
+  List<ConsultProductModel> produtosLista = [];
+  List<CondicaoPagamentoModel> condicoesPagamento = [];
+  List<TipoPagamentoModel> tiposPagamento = [];
+
   FinishCartCubit({
     required this.paymentRepository,
     required this.prefs,
@@ -29,7 +34,6 @@ class FinishCartCubit extends Cubit<FinishCartState> {
       empresaId: prefs.getString('companyCodigo') ?? '',
     ),
   );
-
 
   void setCliente(CustomerModel cliente) {
     emit(state.copyWith(cliente: cliente));
@@ -77,9 +81,11 @@ class FinishCartCubit extends Cubit<FinishCartState> {
   Future<List<CustomerModel>> fetchClientes() async {
     try {
       final clientes = await customerRepository.getCustomers();
+      clientesLista = clientes;
       return clientes;
     } catch (e) {
       final clientesOffline = await customerRepository.dao.getCustomers();
+      clientesLista = clientesOffline;
       return clientesOffline;
     }
   }
@@ -87,9 +93,11 @@ class FinishCartCubit extends Cubit<FinishCartState> {
   Future<List<CondicaoPagamentoModel>> fetchCondicoesPagamento() async {
     try {
       final condicoes = await paymentRepository.getCondicoesPagamento();
+      condicoesPagamento = condicoes;
       return condicoes;
     } catch (e) {
       final condicoesOffline = await paymentRepository.dao.getCondicoesPagamento();
+      condicoesPagamento = condicoesOffline;
       return condicoesOffline;
     }
   }
@@ -97,9 +105,11 @@ class FinishCartCubit extends Cubit<FinishCartState> {
   Future<List<TipoPagamentoModel>> fetchTiposPagamento() async {
     try {
       final tipos = await paymentRepository.getTiposPagamento();
+      tiposPagamento = tipos;
       return tipos;
     } catch (e) {
       final tiposOffline = await paymentRepository.dao.getTiposPagamento();
+      tiposPagamento = tiposOffline;
       return tiposOffline;
     }
   }
@@ -195,7 +205,6 @@ class FinishCartCubit extends Cubit<FinishCartState> {
     }
   }
 
-
   String _formatarValor(double valor) =>
       valor.toStringAsFixed(2).replaceAll('.', ',');
 
@@ -239,7 +248,6 @@ class FinishCartCubit extends Cubit<FinishCartState> {
     return map.values.toList();
   }
 }
-
 
 extension ProdutoHelpers on ConsultProductModel {
   int get quantidadePositiva => quantidade > 0 ? quantidade : 1;
