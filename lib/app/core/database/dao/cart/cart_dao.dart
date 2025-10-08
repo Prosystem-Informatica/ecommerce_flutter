@@ -18,7 +18,8 @@ class CartDao {
       idCondPag TEXT,
       valDesc TEXT,
       obsPed TEXT,
-      totalPed TEXT
+      totalPed TEXT,
+      dataPed TEXT
     );
   ''';
 
@@ -38,9 +39,22 @@ class CartDao {
 
     final numPed = cart.numPed.isEmpty ? await gerarNumeroPedidoSequencial() : cart.numPed;
 
-    final cartWithNumPed = cart.copyWith(numPed: numPed);
+    final cartWithNumPed = cart.copyWith(
+      numPed: numPed,
+      dataPed: cart.dataPed.isEmpty
+          ? "${DateTime.now().day.toString().padLeft(2,'0')}/"
+          "${DateTime.now().month.toString().padLeft(2,'0')}/"
+          "${DateTime.now().year}"
+          : cart.dataPed,
+    );
 
     await db.insert(_tableCart, _toMapCart(cartWithNumPed));
+
+    await db.delete(
+      _tableCartOrder,
+      where: 'numPed = ?',
+      whereArgs: [cartWithNumPed.numPed],
+    );
 
     for (final produto in cartWithNumPed.produtos) {
       await db.insert(_tableCartOrder, _toMapCartOrder(cartWithNumPed.numPed, produto));
@@ -48,6 +62,7 @@ class CartDao {
 
     return 1;
   }
+
 
   Future<List<CartModel>> getCarts() async {
     final Database db = await getDatabase();
@@ -81,6 +96,7 @@ class CartDao {
           valDesc: cartMap['valDesc'],
           obsPed: cartMap['obsPed'],
           totalPed: cartMap['totalPed'],
+          dataPed: cartMap['dataPed'] ?? "", // <-- garante que não venha nulo
           produtos: produtos,
         ),
       );
@@ -119,6 +135,7 @@ class CartDao {
       'valDesc': cart.valDesc,
       'obsPed': cart.obsPed,
       'totalPed': cart.totalPed,
+      'dataPed': cart.dataPed,
     };
   }
 
@@ -131,4 +148,3 @@ class CartDao {
     };
   }
 }
-

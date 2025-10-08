@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../../../core/database/dao/cart/cart_dao.dart';
+import '../../../../../../core/database/dao/cart/product_dao.dart';
 import '../../../../../../repositories/customer/customer_repository.dart';
 import '../../../../../../repositories/customer/model/customer_model.dart';
 import '../../../../../../repositories/finishCard/finish_card_repository.dart';
@@ -77,6 +78,18 @@ class FinishCartCubit extends Cubit<FinishCartState> {
     );
   }
 
+  Future<void> fetchProdutosLocais() async {
+    try {
+      final dao = ConsultProductDao();
+      produtosLista = await dao.getProducts();
+    } catch (e) {
+      produtosLista = [];
+      emit(state.copyWith(
+        status: FinishCartStatus.error,
+        errorMessage: "Erro ao buscar produtos locais: $e",
+      ));
+    }
+  }
 
   Future<List<CustomerModel>> fetchClientes() async {
     try {
@@ -126,9 +139,8 @@ class FinishCartCubit extends Cubit<FinishCartState> {
     }
   }
 
-
   Future<void> salvarLocalmente(double desconto) async {
-    final pedido = _montarPedido(desconto);
+    final pedido = await _montarPedido(desconto);
 
     try {
       await _cartDao.saveCart(pedido);
@@ -208,14 +220,22 @@ class FinishCartCubit extends Cubit<FinishCartState> {
   String _formatarValor(double valor) =>
       valor.toStringAsFixed(2).replaceAll('.', ',');
 
-  String _gerarNumeroPedido() => DateTime.now().millisecondsSinceEpoch.toString();
+  Future<String> _gerarNumeroPedido() async {
+    final pedidos = await _cartDao.getCarts();
+    if (pedidos.isEmpty) return "1";
 
-  CartModel _montarPedido(double desconto) {
+    final ultNum = pedidos.map((p) => int.tryParse(p.numPed) ?? 0)
+        .reduce((a, b) => a > b ? a : b);
+    return (ultNum + 1).toString();
+  }
+
+  Future<CartModel> _montarPedido(double desconto) async {
     final totalComDesconto = state.total - desconto;
+    final agora = DateTime.now();
 
     return CartModel(
       idEmpresa: state.empresaId,
-      numPed: _gerarNumeroPedido(),
+      numPed: await _gerarNumeroPedido(),
       idVendedor: state.vendedorLogin,
       idCliente: state.cliente?.codigo ?? "",
       idTpPag: state.tipoPagamento?.codigo ?? "",
@@ -223,6 +243,9 @@ class FinishCartCubit extends Cubit<FinishCartState> {
       valDesc: _formatarValor(desconto),
       obsPed: state.obs,
       totalPed: _formatarValor(totalComDesconto),
+      dataPed: "${agora.day.toString().padLeft(2, '0')}/"
+          "${agora.month.toString().padLeft(2, '0')}/"
+          "${agora.year}",
       produtos: state.produtos.map(_converterProduto).toList(),
     );
   }
@@ -242,7 +265,7 @@ class FinishCartCubit extends Cubit<FinishCartState> {
       if (map.containsKey(p.codigo)) {
         map[p.codigo]!.quantidade += p.quantidade;
       } else {
-        map[p.codigo] = p;
+        map[p.codigo] = p.copiaComQuantidadePositiva;
       }
     }
     return map.values.toList();

@@ -10,6 +10,7 @@ class CartModel {
   final String valDesc;
   final String obsPed;
   final String totalPed;
+  final String dataPed;
   final List<CartOrderModel> produtos;
 
   CartModel({
@@ -23,6 +24,7 @@ class CartModel {
     required this.obsPed,
     required this.totalPed,
     required this.produtos,
+    this.dataPed = '',
   });
 
   CartModel copyWith({
@@ -35,6 +37,7 @@ class CartModel {
     String? valDesc,
     String? obsPed,
     String? totalPed,
+    String? dataPed,
     List<CartOrderModel>? produtos,
   }) {
     return CartModel(
@@ -47,6 +50,7 @@ class CartModel {
       valDesc: valDesc ?? this.valDesc,
       obsPed: obsPed ?? this.obsPed,
       totalPed: totalPed ?? this.totalPed,
+      dataPed: dataPed ?? this.dataPed,
       produtos: produtos ?? this.produtos,
     );
   }

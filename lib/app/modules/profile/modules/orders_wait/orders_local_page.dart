@@ -26,9 +26,16 @@ class _LocalOrdersPageState extends State<LocalOrdersPage>
   void initState() {
     super.initState();
     _loadLocalOrders();
+    _loadClientes();
     LocalOrdersPage.updateNotifier.addListener(_onUpdate);
   }
 
+  Future<void> _loadClientes() async {
+    final cubit = context.read<FinishCartCubit>();
+    await cubit.fetchClientes();
+    if (!mounted) return;
+    setState(() {});
+  }
   @override
   void dispose() {
     LocalOrdersPage.updateNotifier.removeListener(_onUpdate);
@@ -64,10 +71,15 @@ class _LocalOrdersPageState extends State<LocalOrdersPage>
 
     final cubit = context.read<FinishCartCubit>();
 
+    await cubit.fetchProdutosLocais();
+    await cubit.fetchClientes();
+    await cubit.fetchCondicoesPagamento();
+    await cubit.fetchTiposPagamento();
+
     final clientesMap = {for (var c in cubit.clientesLista) c.codigo: c.cliente};
     final produtosMap = {for (var p in cubit.produtosLista) p.codigo: p.produto};
-    final condicoesMap = {for (var c in cubit.condicoesPagamento) c.codigo: c.descricao ?? ''};
-    final tiposMap = {for (var t in cubit.tiposPagamento) t.codigo: t.descricao ?? ''};
+    final condicoesMap = {for (var c in cubit.condicoesPagamento) c.codigo: c.descricao};
+    final tiposMap = {for (var t in cubit.tiposPagamento) t.codigo: t.descricao};
 
     await showModalBottomSheet(
       context: context,
@@ -178,6 +190,12 @@ class _LocalOrdersPageState extends State<LocalOrdersPage>
                         label: const Text("Excluir"),
                         onPressed: () async {
                           await cubit.excluirPedidoLocal(order.numPed);
+                          if ((cubit.state.successMessage ?? '').isNotEmpty) {
+                            showSuccess(cubit.state.successMessage!);
+                          } else if ((cubit.state.errorMessage ?? '')
+                              .isNotEmpty) {
+                            showError(cubit.state.errorMessage!);
+                          }
                           cubit.limparMensagens();
                           Navigator.of(ctx).pop();
                           _loadLocalOrders();
@@ -243,6 +261,7 @@ class _LocalOrdersPageState extends State<LocalOrdersPage>
                     final order = filteredOrders[index];
 
                     final cubit = context.read<FinishCartCubit>();
+                     cubit.fetchClientes();
                     final clientesMap = {for (var c in cubit.clientesLista) c.codigo: c.cliente};
 
                     return Padding(
@@ -263,6 +282,7 @@ class _LocalOrdersPageState extends State<LocalOrdersPage>
                                 'number': order.numPed,
                                 'client': clientesMap[order.idCliente] ?? order.idCliente,
                                 'total': order.totalPed,
+                                'date': order.dataPed,
                               },
                             ),
                           ),
