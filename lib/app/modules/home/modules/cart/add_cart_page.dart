@@ -65,7 +65,7 @@ class _ProductListPageState extends State<ProductListPage> {
     }
   }
 
-  int get totalItems => cart.fold(0, (sum, item) => sum + item.quantity);
+  int get totalItems => cart.length;
 
   double get totalPrice => cart.fold(0.0, (sum, item) {
     final price = double.tryParse(item.product.preco.replaceAll(',', '.')) ?? 0.0;

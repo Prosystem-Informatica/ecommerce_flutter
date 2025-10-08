@@ -76,37 +76,31 @@ class FinishCartCubit extends Cubit<FinishCartState> {
 
   Future<List<CustomerModel>> fetchClientes() async {
     try {
-      return await customerRepository.getCustomers();
+      final clientes = await customerRepository.getCustomers();
+      return clientes;
     } catch (e) {
-      emit(state.copyWith(
-        status: FinishCartStatus.error,
-        errorMessage: e.toString(),
-      ));
-      return [];
+      final clientesOffline = await customerRepository.dao.getCustomers();
+      return clientesOffline;
     }
   }
 
   Future<List<CondicaoPagamentoModel>> fetchCondicoesPagamento() async {
     try {
-      return await paymentRepository.getCondicoesPagamento();
+      final condicoes = await paymentRepository.getCondicoesPagamento();
+      return condicoes;
     } catch (e) {
-      emit(state.copyWith(
-        status: FinishCartStatus.error,
-        errorMessage: e.toString(),
-      ));
-      return [];
+      final condicoesOffline = await paymentRepository.dao.getCondicoesPagamento();
+      return condicoesOffline;
     }
   }
 
   Future<List<TipoPagamentoModel>> fetchTiposPagamento() async {
     try {
-      return await paymentRepository.getTiposPagamento();
+      final tipos = await paymentRepository.getTiposPagamento();
+      return tipos;
     } catch (e) {
-      emit(state.copyWith(
-        status: FinishCartStatus.error,
-        errorMessage: e.toString(),
-      ));
-      return [];
+      final tiposOffline = await paymentRepository.dao.getTiposPagamento();
+      return tiposOffline;
     }
   }
 
@@ -141,14 +135,11 @@ class FinishCartCubit extends Cubit<FinishCartState> {
     }
   }
 
-
   Future<bool> enviarTodosPedidos() async {
     final pedidos = await fetchPedidosPendentes();
-
     if (pedidos.isEmpty) return false;
 
     bool todosEnviados = true;
-
     emit(state.copyWith(status: FinishCartStatus.loading));
 
     for (final pedido in pedidos) {
@@ -162,7 +153,6 @@ class FinishCartCubit extends Cubit<FinishCartState> {
     }
 
     emit(state.copyWith(status: FinishCartStatus.initial));
-
     return todosEnviados;
   }
 
@@ -208,7 +198,6 @@ class FinishCartCubit extends Cubit<FinishCartState> {
 
   String _formatarValor(double valor) =>
       valor.toStringAsFixed(2).replaceAll('.', ',');
-
 
   String _gerarNumeroPedido() => DateTime.now().millisecondsSinceEpoch.toString();
 

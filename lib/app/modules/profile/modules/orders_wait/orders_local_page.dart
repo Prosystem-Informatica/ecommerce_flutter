@@ -5,24 +5,22 @@ import '../../../../core/ui/widget/list_tile_orders_widget.dart';
 import '../../../../repositories/finishCard/model/cart_model.dart';
 import '../../../home/modules/cart/cubit/finishCard/finish_bloc_cubit.dart';
 import '../../../home/modules/cart/finish_cart_page.dart';
+import '../../../../core/ui/helpers/messages.dart';
 
 class LocalOrdersPage extends StatefulWidget {
   const LocalOrdersPage({super.key});
+
+  static final ValueNotifier<bool> updateNotifier = ValueNotifier(false);
 
   @override
   State<LocalOrdersPage> createState() => _LocalOrdersPageState();
 }
 
-class _LocalOrdersPageState extends State<LocalOrdersPage> {
+class _LocalOrdersPageState extends State<LocalOrdersPage>
+    with Messages<LocalOrdersPage> {
   String searchQuery = '';
   List<CartModel> localOrders = [];
   bool _modalAberto = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadLocalOrders();
-  }
 
   Future<void> _loadLocalOrders() async {
     final dao = CartDao();
@@ -76,44 +74,27 @@ class _LocalOrdersPageState extends State<LocalOrdersPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      "Pedido #${order.numPed}",
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
-                    ),
+                    Text("Pedido #${order.numPed}",
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 18)),
                     IconButton(
-                      onPressed: () => Navigator.of(ctx).pop(),
-                      icon: const Icon(Icons.close),
-                    ),
+                        onPressed: () => Navigator.of(ctx).pop(),
+                        icon: const Icon(Icons.close)),
                   ],
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  "Cliente: ${order.idCliente}",
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  "Forma de Pagamento: ${order.idTpPag}",
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  "Condição: ${order.idCondPag}",
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
+                Text("Cliente: ${order.idCliente}",
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text("Forma de Pagamento: ${order.idTpPag}",
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text("Condição: ${order.idCondPag}",
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
-                Text(
-                  "Desconto: R\$ ${formatar(desconto)}",
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  "Total do Pedido: R\$ ${formatar(totalComDesconto)}",
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
+                Text("Desconto: R\$ ${formatar(desconto)}",
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text("Total do Pedido: R\$ ${formatar(totalComDesconto)}",
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 16)),
                 const SizedBox(height: 12),
                 Expanded(
                   child: ListView.builder(
@@ -128,12 +109,8 @@ class _LocalOrdersPageState extends State<LocalOrdersPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              "Produto: ${item.idProduto}",
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                            Text("Produto: ${item.idProduto}",
+                                style: const TextStyle(fontWeight: FontWeight.bold)),
                             const SizedBox(height: 2),
                             Text("Qtd: ${item.quantidade}"),
                             Text("Unit: R\$ ${formatar(preco)}"),
@@ -155,16 +132,17 @@ class _LocalOrdersPageState extends State<LocalOrdersPage> {
                         onPressed: () async {
                           cubit.limparMensagens();
                           Navigator.of(ctx).pop();
-                          await Navigator.push(
+                          await Navigator.push<bool>(
                             context,
-                            MaterialPageRoute(builder: (_) => FinishCartPage()),
+                            MaterialPageRoute(
+                              builder: (_) => const FinishCartPage(),
+                            ),
                           );
                           _loadLocalOrders();
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.orange,
                           foregroundColor: Colors.white,
-                          elevation: 3,
                         ),
                       ),
                     ),
@@ -176,11 +154,9 @@ class _LocalOrdersPageState extends State<LocalOrdersPage> {
                         onPressed: () async {
                           await cubit.excluirPedidoLocal(order.numPed);
                           if ((cubit.state.successMessage ?? '').isNotEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(cubit.state.successMessage!),
-                              ),
-                            );
+                            showSuccess(cubit.state.successMessage!);
+                          } else if ((cubit.state.errorMessage ?? '').isNotEmpty) {
+                            showError(cubit.state.errorMessage!);
                           }
                           cubit.limparMensagens();
                           Navigator.of(ctx).pop();
@@ -189,7 +165,6 @@ class _LocalOrdersPageState extends State<LocalOrdersPage> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red,
                           foregroundColor: Colors.white,
-                          elevation: 3,
                         ),
                       ),
                     ),
@@ -207,7 +182,6 @@ class _LocalOrdersPageState extends State<LocalOrdersPage> {
 
   @override
   Widget build(BuildContext context) {
-    final filteredOrders = getFilteredOrders(localOrders);
     final cubit = context.read<FinishCartCubit>();
 
     return Scaffold(
@@ -235,87 +209,90 @@ class _LocalOrdersPageState extends State<LocalOrdersPage> {
                         width: 2,
                       ),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      vertical: 0,
-                      horizontal: 20,
-                    ),
                   ),
-                  onChanged: (value) {
-                    setState(() {
-                      searchQuery = value;
-                    });
-                  },
+                  onChanged: (value) => setState(() => searchQuery = value),
                 ),
               ),
               Expanded(
-                child:
-                    filteredOrders.isEmpty
+                child: ValueListenableBuilder<bool>(
+                  valueListenable: LocalOrdersPage.updateNotifier,
+                  builder: (context, value, _) {
+                    _loadLocalOrders();
+                    final filteredOrders = getFilteredOrders(localOrders);
+
+                    return filteredOrders.isEmpty
                         ? const Center(child: Text('Nenhum pedido salvo'))
                         : ListView.separated(
-                          itemCount: filteredOrders.length,
-                          separatorBuilder:
-                              (_, __) => const SizedBox(height: 8),
-                          itemBuilder: (context, index) {
-                            final order = filteredOrders[index];
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                              ),
-                              child: Card(
-                                color: Colors.lightBlue[50],
-                                elevation: 3,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: InkWell(
-                                  borderRadius: BorderRadius.circular(12),
-                                  onTap: () => _abrirDetalhes(order),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: ListTileOrdersWidget(
-                                      order: {
-                                        'number': order.numPed,
-                                        'client': order.idCliente,
-                                        'total': order.totalPed,
-                                      },
-                                    ),
-                                  ),
+                      itemCount: filteredOrders.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 8),
+                      itemBuilder: (context, index) {
+                        final order = filteredOrders[index];
+                        return Padding(
+                          padding:
+                          const EdgeInsets.symmetric(horizontal: 8),
+                          child: Card(
+                            color: Colors.lightBlue[50],
+                            elevation: 3,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(12),
+                              onTap: () => _abrirDetalhes(order),
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: ListTileOrdersWidget(
+                                  order: {
+                                    'number': order.numPed,
+                                    'client': order.idCliente,
+                                    'total': order.totalPed,
+                                  },
                                 ),
                               ),
-                            );
-                          },
-                        ),
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
             ],
           ),
-        ],
-      ),
-      floatingActionButton:
-          localOrders.isEmpty
-              ? null
-              : Align(
-                alignment: Alignment.bottomLeft,
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 25.0, bottom: 5.0),
-                  child: FloatingActionButton(
-                    onPressed: () async {
-                      final enviados = await cubit.enviarTodosPedidos();
-                      if (enviados) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Todos os pedidos enviados!'),
-                          ),
-                        );
-                      }
-                      cubit.limparMensagens();
-                      _loadLocalOrders();
-                    },
-                    backgroundColor: Theme.of(context).primaryColor,
-                    child: const Icon(Icons.send, color: Colors.white),
-                    elevation: 3,
+          if (localOrders.isNotEmpty)
+            Positioned(
+              left: 16,
+              bottom: 16,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.send, color: Colors.white),
+                label: const Text(
+                  "Enviar Todos",
+                  style: TextStyle(color: Colors.white),
+                ),
+                onPressed: () async {
+                  final sucesso = await cubit.enviarTodosPedidos();
+                  if (sucesso) {
+                    showSuccess("Todos os pedidos foram enviados!");
+                  } else {
+                    showError("Falha ao enviar todos os pedidos.");
+                  }
+                  _loadLocalOrders();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).primaryColor,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
                   ),
                 ),
               ),
+            ),
+        ],
+      ),
     );
   }
 }

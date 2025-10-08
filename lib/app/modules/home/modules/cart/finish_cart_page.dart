@@ -4,6 +4,7 @@ import '../../../../core/ui/helpers/messages.dart';
 import '../../../../repositories/customer/model/customer_model.dart';
 import '../../../../repositories/payment/model/payment_model.dart';
 import '../../../../repositories/product/model/consult_product_model.dart';
+import '../../../profile/modules/orders_wait/orders_local_page.dart';
 import 'cubit/finishCard/finish_bloc_cubit.dart';
 import 'cubit/finishCard/finish_bloc_state.dart';
 import 'add_cart_page.dart';
@@ -15,7 +16,8 @@ class FinishCartPage extends StatefulWidget {
   State<FinishCartPage> createState() => _FinishCartPageState();
 }
 
-class _FinishCartPageState extends State<FinishCartPage> with Messages<FinishCartPage> {
+class _FinishCartPageState extends State<FinishCartPage>
+    with Messages<FinishCartPage> {
   final TextEditingController _descontoController = TextEditingController();
 
   bool validateFields(FinishCartState state) {
@@ -35,7 +37,9 @@ class _FinishCartPageState extends State<FinishCartPage> with Messages<FinishCar
       showError("Selecione o tipo de pagamento.");
       return false;
     }
-    final desconto = double.tryParse(_descontoController.text.replaceAll(',', '.')) ?? 0.0;
+
+    final desconto =
+        double.tryParse(_descontoController.text.replaceAll(',', '.')) ?? 0.0;
     if (desconto >= state.total) {
       showError("O desconto não pode ser maior ou igual ao total do pedido.");
       return false;
@@ -65,13 +69,18 @@ class _FinishCartPageState extends State<FinishCartPage> with Messages<FinishCar
             listener: (context, state) {
               state.status.matchAny(
                 success: () {
-                  showSuccess(state.successMessage ?? "Pedido enviado com sucesso!");
+                  showSuccess(state.successMessage ?? "Pedido salvo com sucesso!");
                   cubit.resetarCampos();
                   _descontoController.clear();
+
+                  LocalOrdersPage.updateNotifier.value =
+                  !LocalOrdersPage.updateNotifier.value;
+
+
                   Navigator.pop(context);
                 },
                 error: () {
-                  showError(state.errorMessage ?? "Erro não informado");
+                  showError(state.errorMessage ?? "Erro ao salvar pedido.");
                 },
                 any: () {},
               );
@@ -89,7 +98,7 @@ class _FinishCartPageState extends State<FinishCartPage> with Messages<FinishCar
                         final clientes = await cubit.fetchClientes();
                         if (!mounted) return;
                         if (clientes.isEmpty) {
-                          showError("Nenhum cliente encontrado");
+                          showError("Nenhum cliente encontrado.");
                           return;
                         }
                         _showSearch<CustomerModel>(
@@ -106,26 +115,22 @@ class _FinishCartPageState extends State<FinishCartPage> with Messages<FinishCar
                       ),
                     ),
                     const SizedBox(height: 10),
-
                     TextField(
                       decoration: const InputDecoration(labelText: "Observações"),
                       onChanged: cubit.setObservacao,
                     ),
                     const SizedBox(height: 20),
-
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text(
                           "Produtos",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                         ElevatedButton(
                           onPressed: () async {
-                            final result = await Navigator.push<List<ConsultProductModel>>(
+                            final result =
+                            await Navigator.push<List<ConsultProductModel>>(
                               context,
                               MaterialPageRoute(
                                 builder: (_) => const ProductListPage(),
@@ -138,16 +143,14 @@ class _FinishCartPageState extends State<FinishCartPage> with Messages<FinishCar
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.lightBlue[50],
                             foregroundColor: Theme.of(context).colorScheme.primary,
-                            elevation: 3,
                           ),
                           child: const Text("+ Adicionar"),
                         ),
                       ],
                     ),
                     const SizedBox(height: 10),
-
                     state.produtos.isEmpty
-                        ? const Text("Nenhum produto adicionado")
+                        ? const Text("Nenhum produto adicionado.")
                         : SizedBox(
                       height: 250,
                       child: ListView.builder(
@@ -167,7 +170,8 @@ class _FinishCartPageState extends State<FinishCartPage> with Messages<FinishCar
                                   setState(() {
                                     cubit.state.produtos.removeAt(index);
                                   });
-                                  cubit.setProdutos(List.from(cubit.state.produtos));
+                                  cubit.setProdutos(
+                                      List.from(cubit.state.produtos));
                                 },
                               ),
                             ),
@@ -176,7 +180,6 @@ class _FinishCartPageState extends State<FinishCartPage> with Messages<FinishCar
                       ),
                     ),
                     const SizedBox(height: 20),
-
                     GestureDetector(
                       onTap: () async {
                         final condicoes = await cubit.fetchCondicoesPagamento();
@@ -195,7 +198,6 @@ class _FinishCartPageState extends State<FinishCartPage> with Messages<FinishCar
                       ),
                     ),
                     const SizedBox(height: 10),
-
                     GestureDetector(
                       onTap: () async {
                         final tipos = await cubit.fetchTiposPagamento();
@@ -214,20 +216,14 @@ class _FinishCartPageState extends State<FinishCartPage> with Messages<FinishCar
                       ),
                     ),
                     const SizedBox(height: 20),
-
                     TextField(
                       controller: _descontoController,
                       keyboardType: TextInputType.number,
                       decoration: const InputDecoration(
-                        labelText: "Desconto",
-                        prefixText: "R\$ ",
-                      ),
-                      onChanged: (_) {
-                        setState(() {});
-                      },
+                          labelText: "Desconto", prefixText: "R\$ "),
+                      onChanged: (_) => setState(() {}),
                     ),
                     const SizedBox(height: 20),
-
                     Card(
                       color: Colors.lightBlue[50],
                       elevation: 3,
@@ -237,17 +233,11 @@ class _FinishCartPageState extends State<FinishCartPage> with Messages<FinishCar
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text(
-                              "Total Pedido",
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            Text(
-                              "R\$ ${totalComDesconto.toStringAsFixed(2)}",
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                              ),
-                            ),
+                            const Text("Total Pedido",
+                                style: TextStyle(fontWeight: FontWeight.bold)),
+                            Text("R\$ ${totalComDesconto.toStringAsFixed(2)}",
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold, fontSize: 18)),
                           ],
                         ),
                       ),
@@ -259,15 +249,15 @@ class _FinishCartPageState extends State<FinishCartPage> with Messages<FinishCar
                           child: ElevatedButton(
                             onPressed: () {
                               if (!validateFields(state)) return;
-
                               cubit.salvarLocalmente(
-                                double.tryParse(_descontoController.text.replaceAll(',', '.')) ?? 0.0,
+                                double.tryParse(
+                                    _descontoController.text.replaceAll(',', '.')) ??
+                                    0.0,
                               );
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.green,
                               foregroundColor: Colors.white,
-                              elevation: 3,
                             ),
                             child: const Text("Enviar"),
                           ),
@@ -283,7 +273,6 @@ class _FinishCartPageState extends State<FinishCartPage> with Messages<FinishCar
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.red,
                               foregroundColor: Colors.white,
-                              elevation: 3,
                             ),
                             child: const Text("Cancelar"),
                           ),
@@ -307,10 +296,9 @@ class _FinishCartPageState extends State<FinishCartPage> with Messages<FinishCar
     required String Function(T) display,
     required void Function(T) onSelected,
   }) async {
-    if (items.isEmpty) return;
-    if (!mounted) return;
+    if (items.isEmpty || !mounted) return;
 
-    TextEditingController searchController = TextEditingController();
+    final searchController = TextEditingController();
     List<T> filtered = List.from(items);
 
     await showDialog(
