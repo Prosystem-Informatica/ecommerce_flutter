@@ -36,6 +36,7 @@ class _LocalOrdersPageState extends State<LocalOrdersPage>
     if (!mounted) return;
     setState(() {});
   }
+
   @override
   void dispose() {
     LocalOrdersPage.updateNotifier.removeListener(_onUpdate);
@@ -76,10 +77,18 @@ class _LocalOrdersPageState extends State<LocalOrdersPage>
     await cubit.fetchCondicoesPagamento();
     await cubit.fetchTiposPagamento();
 
-    final clientesMap = {for (var c in cubit.clientesLista) c.codigo: c.cliente};
-    final produtosMap = {for (var p in cubit.produtosLista) p.codigo: p.produto};
-    final condicoesMap = {for (var c in cubit.condicoesPagamento) c.codigo: c.descricao};
-    final tiposMap = {for (var t in cubit.tiposPagamento) t.codigo: t.descricao};
+    final clientesMap = {
+      for (var c in cubit.clientesLista) c.codigo: c.cliente,
+    };
+    final produtosMap = {
+      for (var p in cubit.produtosLista) p.codigo: p.produto,
+    };
+    final condicoesMap = {
+      for (var c in cubit.condicoesPagamento) c.codigo: c.descricao,
+    };
+    final tiposMap = {
+      for (var t in cubit.tiposPagamento) t.codigo: t.descricao,
+    };
 
     await showModalBottomSheet(
       context: context,
@@ -88,13 +97,15 @@ class _LocalOrdersPageState extends State<LocalOrdersPage>
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       builder: (ctx) {
+        String formatar(double valor) =>
+            valor.toStringAsFixed(2).replaceAll('.', ',');
+
         double total =
             double.tryParse(order.totalPed.replaceAll(',', '.')) ?? 0.0;
         double desconto =
             double.tryParse(order.valDesc.replaceAll(',', '.')) ?? 0.0;
-        double totalComDesconto = total - desconto;
-        String formatar(double valor) =>
-            valor.toStringAsFixed(2).replaceAll('.', ',');
+
+        double totalComDesconto = total;
 
         return Padding(
           padding: EdgeInsets.only(
@@ -109,27 +120,44 @@ class _LocalOrdersPageState extends State<LocalOrdersPage>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text("Pedido #${order.numPed}",
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 18)),
+                    Text(
+                      "Pedido #${order.numPed}",
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
                     IconButton(
-                        onPressed: () => Navigator.of(ctx).pop(),
-                        icon: const Icon(Icons.close)),
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      icon: const Icon(Icons.close),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 8),
-                Text("Cliente: ${clientesMap[order.idCliente] ?? order.idCliente}",
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
-                Text("Forma de Pagamento: ${tiposMap[order.idTpPag] ?? order.idTpPag}",
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
-                Text("Condição: ${condicoesMap[order.idCondPag] ?? order.idCondPag}",
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(
+                  "Cliente: ${clientesMap[order.idCliente] ?? order.idCliente}",
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  "Forma de Pagamento: ${tiposMap[order.idTpPag] ?? order.idTpPag}",
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  "Condição: ${condicoesMap[order.idCondPag] ?? order.idCondPag}",
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 8),
-                Text("Desconto: R\$ ${formatar(desconto)}",
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
-                Text("Total do Pedido: R\$ ${formatar(totalComDesconto)}",
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 16)),
+                Text(
+                  "Desconto: R\$ ${formatar(desconto)}",
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  "Total do Pedido: R\$ ${formatar(totalComDesconto)}",
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
                 const SizedBox(height: 12),
                 Expanded(
                   child: ListView.builder(
@@ -144,8 +172,12 @@ class _LocalOrdersPageState extends State<LocalOrdersPage>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text("Produto: ${produtosMap[item.idProduto] ?? item.idProduto}",
-                                style: const TextStyle(fontWeight: FontWeight.bold)),
+                            Text(
+                              "Produto: ${produtosMap[item.idProduto] ?? item.idProduto}",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                             const SizedBox(height: 2),
                             Text("Qtd: ${item.quantidade}"),
                             Text("Unit: R\$ ${formatar(preco)}"),
@@ -165,14 +197,41 @@ class _LocalOrdersPageState extends State<LocalOrdersPage>
                         icon: const Icon(Icons.edit),
                         label: const Text("Editar"),
                         onPressed: () async {
-                          cubit.limparMensagens();
+                          final clienteSelecionado = cubit.clientesLista
+                              .firstWhere(
+                                (c) => c.codigo == order.idCliente,
+                                orElse: () => cubit.clientesLista.first,
+                              );
+
+                          final condicaoSelecionada = cubit.condicoesPagamento
+                              .firstWhere(
+                                (c) => c.codigo == order.idCondPag,
+                                orElse: () => cubit.condicoesPagamento.first,
+                              );
+
+                          final tipoSelecionado = cubit.tiposPagamento
+                              .firstWhere(
+                                (t) => t.codigo == order.idTpPag,
+                                orElse: () => cubit.tiposPagamento.first,
+                              );
+
+                          cubit.setCliente(clienteSelecionado);
+                          cubit.setCondicaoPagamento(condicaoSelecionada);
+                          cubit.setTipoPagamento(tipoSelecionado);
+
+                          cubit.setProdutosDoPedido(order.produtos);
+
+                          cubit.setPedidoEmEdicao(order);
+
                           Navigator.of(ctx).pop();
+
                           final atualizado = await Navigator.push<bool>(
                             context,
                             MaterialPageRoute(
                               builder: (_) => const FinishCartPage(),
                             ),
                           );
+
                           if (atualizado == true) {
                             _loadLocalOrders();
                           }
@@ -252,45 +311,54 @@ class _LocalOrdersPageState extends State<LocalOrdersPage>
                 ),
               ),
               Expanded(
-                child: filteredOrders.isEmpty
-                    ? const Center(child: Text('Nenhum pedido salvo'))
-                    : ListView.separated(
-                  itemCount: filteredOrders.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
-                  itemBuilder: (context, index) {
-                    final order = filteredOrders[index];
+                child:
+                    filteredOrders.isEmpty
+                        ? const Center(child: Text('Nenhum pedido salvo'))
+                        : ListView.separated(
+                          itemCount: filteredOrders.length,
+                          separatorBuilder:
+                              (_, __) => const SizedBox(height: 8),
+                          itemBuilder: (context, index) {
+                            final order = filteredOrders[index];
 
-                    final cubit = context.read<FinishCartCubit>();
-                     cubit.fetchClientes();
-                    final clientesMap = {for (var c in cubit.clientesLista) c.codigo: c.cliente};
+                            final cubit = context.read<FinishCartCubit>();
+                            cubit.fetchClientes();
+                            final clientesMap = {
+                              for (var c in cubit.clientesLista)
+                                c.codigo: c.cliente,
+                            };
 
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Card(
-                        color: Colors.lightBlue[50],
-                        elevation: 3,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                              ),
+                              child: Card(
+                                color: Colors.lightBlue[50],
+                                elevation: 3,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(12),
+                                  onTap: () => _abrirDetalhes(order),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: ListTileOrdersWidget(
+                                      order: {
+                                        'number': order.numPed,
+                                        'client':
+                                            clientesMap[order.idCliente] ??
+                                            order.idCliente,
+                                        'total': order.totalPed,
+                                        'date': order.dataPed,
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
                         ),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(12),
-                          onTap: () => _abrirDetalhes(order),
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: ListTileOrdersWidget(
-                              order: {
-                                'number': order.numPed,
-                                'client': clientesMap[order.idCliente] ?? order.idCliente,
-                                'total': order.totalPed,
-                                'date': order.dataPed,
-                              },
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
               ),
             ],
           ),

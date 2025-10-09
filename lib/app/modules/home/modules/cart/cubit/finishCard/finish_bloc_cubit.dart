@@ -36,25 +36,25 @@ class FinishCartCubit extends Cubit<FinishCartState> {
     ),
   );
 
-  void setCliente(CustomerModel cliente) {
-    emit(state.copyWith(cliente: cliente));
-  }
+  void setCliente(CustomerModel cliente) =>
+      emit(state.copyWith(cliente: cliente));
 
-  void setCondicaoPagamento(CondicaoPagamentoModel pagamento) {
-    emit(state.copyWith(condicaoPagamento: pagamento));
-  }
+  void setCondicaoPagamento(CondicaoPagamentoModel pagamento) =>
+      emit(state.copyWith(condicaoPagamento: pagamento));
 
-  void setTipoPagamento(TipoPagamentoModel pagamento) {
-    emit(state.copyWith(tipoPagamento: pagamento));
-  }
+  void setTipoPagamento(TipoPagamentoModel pagamento) =>
+      emit(state.copyWith(tipoPagamento: pagamento));
 
-  void setObservacao(String obs) {
-    emit(state.copyWith(obs: obs));
-  }
+  void setObservacao(String obs) => emit(state.copyWith(obs: obs));
 
-  void setProdutos(List<ConsultProductModel> itens) {
-    emit(state.copyWith(produtos: _agruparProdutos(itens)));
-  }
+  void setProdutos(List<ConsultProductModel> itens) =>
+      emit(state.copyWith(produtos: _agruparProdutos(itens)));
+
+  void setProdutosDoPedido(List<CartOrderModel> produtos) =>
+      emit(state.copyWith(produtosPedido: produtos));
+
+  void setPedidoEmEdicao(CartModel pedido) =>
+      emit(state.copyWith(pedidoEmEdicao: pedido));
 
   void addProduto(ConsultProductModel produto) {
     final novaLista = List<ConsultProductModel>.from(state.produtos);
@@ -76,6 +76,14 @@ class FinishCartCubit extends Cubit<FinishCartState> {
         empresaId: state.empresaId,
       ),
     );
+  }
+
+  void limparMensagens() {
+    emit(state.copyWith(
+      successMessage: '',
+      errorMessage: '',
+      status: FinishCartStatus.initial,
+    ));
   }
 
   Future<void> fetchProdutosLocais() async {
@@ -109,7 +117,8 @@ class FinishCartCubit extends Cubit<FinishCartState> {
       condicoesPagamento = condicoes;
       return condicoes;
     } catch (e) {
-      final condicoesOffline = await paymentRepository.dao.getCondicoesPagamento();
+      final condicoesOffline =
+      await paymentRepository.dao.getCondicoesPagamento();
       condicoesPagamento = condicoesOffline;
       return condicoesOffline;
     }
@@ -139,22 +148,58 @@ class FinishCartCubit extends Cubit<FinishCartState> {
     }
   }
 
-  Future<void> salvarLocalmente(double desconto) async {
-    final pedido = await _montarPedido(desconto);
-
+  Future<void> salvarPedidoLocal(CartModel pedido) async {
     try {
-      await _cartDao.saveCart(pedido);
+      await _cartDao.saveOrUpdateCart(pedido);
       emit(state.copyWith(
         status: FinishCartStatus.success,
-        successMessage: "Pedido salvo localmente!",
+        successMessage: "Pedido salvo com sucesso!",
       ));
-      resetarCampos();
     } catch (e) {
       emit(state.copyWith(
         status: FinishCartStatus.error,
-        errorMessage: "Erro ao salvar localmente: $e",
+        errorMessage: "Erro ao salvar pedido: $e",
       ));
     }
+  }
+
+  Future<void> atualizarPedidoLocal(CartModel pedidoAtualizado) async {
+    await salvarPedidoLocal(pedidoAtualizado);
+  }
+
+  Future<void> excluirPedidoLocal(String numPed) async {
+    try {
+      await _cartDao.deleteCart(numPed);
+      emit(state.copyWith(
+        status: FinishCartStatus.success,
+        successMessage: "Pedido excluído com sucesso!",
+      ));
+    } catch (e) {
+      emit(state.copyWith(
+        status: FinishCartStatus.error,
+        errorMessage: "Erro ao excluir pedido: $e",
+      ));
+    }
+  }
+
+  Future<CartModel> montarPedidoComDesconto(double desconto) async {
+    final totalComDesconto = state.total - desconto;
+    final agora = DateTime.now();
+
+    return CartModel(
+      idEmpresa: state.empresaId,
+      numPed: state.pedidoEmEdicao?.numPed ?? await _gerarNumeroPedido(),
+      idVendedor: state.vendedorLogin,
+      idCliente: state.cliente?.codigo ?? "",
+      idTpPag: state.tipoPagamento?.codigo ?? "",
+      idCondPag: state.condicaoPagamento?.codigo ?? "",
+      valDesc: _formatarValor(desconto),
+      obsPed: state.obs,
+      totalPed: _formatarValor(totalComDesconto),
+      dataPed: "${agora.day.toString().padLeft(2, '0')}/"
+          "${agora.month.toString().padLeft(2, '0')}/${agora.year}",
+      produtos: state.produtos.map(_converterProduto).toList(),
+    );
   }
 
   Future<bool> enviarTodosPedidos() async {
@@ -178,45 +223,6 @@ class FinishCartCubit extends Cubit<FinishCartState> {
     return todosEnviados;
   }
 
-  Future<void> atualizarPedidoLocal(CartModel pedidoAtualizado) async {
-    try {
-      await _cartDao.deleteCart(pedidoAtualizado.numPed);
-      await _cartDao.saveCart(pedidoAtualizado);
-      emit(state.copyWith(
-        status: FinishCartStatus.success,
-        successMessage: "Pedido atualizado com sucesso!",
-      ));
-    } catch (e) {
-      emit(state.copyWith(
-        status: FinishCartStatus.error,
-        errorMessage: "Erro ao atualizar pedido: $e",
-      ));
-    }
-  }
-
-  void limparMensagens() {
-    emit(state.copyWith(
-      successMessage: '',
-      errorMessage: '',
-      status: FinishCartStatus.initial,
-    ));
-  }
-
-  Future<void> excluirPedidoLocal(String numPed) async {
-    try {
-      await _cartDao.deleteCart(numPed);
-      emit(state.copyWith(
-        status: FinishCartStatus.success,
-        successMessage: "Pedido excluído com sucesso!",
-      ));
-    } catch (e) {
-      emit(state.copyWith(
-        status: FinishCartStatus.error,
-        errorMessage: "Erro ao excluir pedido: $e",
-      ));
-    }
-  }
-
   String _formatarValor(double valor) =>
       valor.toStringAsFixed(2).replaceAll('.', ',');
 
@@ -229,7 +235,7 @@ class FinishCartCubit extends Cubit<FinishCartState> {
     return (ultNum + 1).toString();
   }
 
-  Future<CartModel> _montarPedido(double desconto) async {
+  Future<CartModel> montarPedido(double desconto) async {
     final totalComDesconto = state.total - desconto;
     final agora = DateTime.now();
 
@@ -243,9 +249,8 @@ class FinishCartCubit extends Cubit<FinishCartState> {
       valDesc: _formatarValor(desconto),
       obsPed: state.obs,
       totalPed: _formatarValor(totalComDesconto),
-      dataPed: "${agora.day.toString().padLeft(2, '0')}/"
-          "${agora.month.toString().padLeft(2, '0')}/"
-          "${agora.year}",
+      dataPed:
+      "${agora.day.toString().padLeft(2, '0')}/${agora.month.toString().padLeft(2, '0')}/${agora.year}",
       produtos: state.produtos.map(_converterProduto).toList(),
     );
   }

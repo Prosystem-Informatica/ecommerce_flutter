@@ -34,10 +34,13 @@ class CartDao {
     );
   ''';
 
-  Future<int> saveCart(CartModel cart) async {
+
+  Future<int> saveOrUpdateCart(CartModel cart) async {
     final Database db = await getDatabase();
 
-    final numPed = cart.numPed.isEmpty ? await gerarNumeroPedidoSequencial() : cart.numPed;
+    final numPed = cart.numPed.isEmpty
+        ? await gerarNumeroPedidoSequencial()
+        : cart.numPed;
 
     final cartWithNumPed = cart.copyWith(
       numPed: numPed,
@@ -48,7 +51,22 @@ class CartDao {
           : cart.dataPed,
     );
 
-    await db.insert(_tableCart, _toMapCart(cartWithNumPed));
+    final existing = await db.query(
+      _tableCart,
+      where: 'numPed = ?',
+      whereArgs: [cartWithNumPed.numPed],
+    );
+
+    if (existing.isNotEmpty) {
+      await db.update(
+        _tableCart,
+        _toMapCart(cartWithNumPed),
+        where: 'numPed = ?',
+        whereArgs: [cartWithNumPed.numPed],
+      );
+    } else {
+      await db.insert(_tableCart, _toMapCart(cartWithNumPed));
+    }
 
     await db.delete(
       _tableCartOrder,
@@ -62,7 +80,6 @@ class CartDao {
 
     return 1;
   }
-
 
   Future<List<CartModel>> getCarts() async {
     final Database db = await getDatabase();
@@ -96,7 +113,7 @@ class CartDao {
           valDesc: cartMap['valDesc'],
           obsPed: cartMap['obsPed'],
           totalPed: cartMap['totalPed'],
-          dataPed: cartMap['dataPed'] ?? "", // <-- garante que não venha nulo
+          dataPed: cartMap['dataPed'] ?? "",
           produtos: produtos,
         ),
       );

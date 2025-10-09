@@ -4,13 +4,16 @@ import '../../../../core/ui/helpers/messages.dart';
 import '../../../../repositories/customer/model/customer_model.dart';
 import '../../../../repositories/payment/model/payment_model.dart';
 import '../../../../repositories/product/model/consult_product_model.dart';
+import '../../../../repositories/finishCard/model/cart_model.dart';
 import '../../../profile/modules/orders_wait/orders_local_page.dart';
 import 'cubit/finishCard/finish_bloc_cubit.dart';
 import 'cubit/finishCard/finish_bloc_state.dart';
 import 'add_cart_page.dart';
 
 class FinishCartPage extends StatefulWidget {
-  const FinishCartPage({super.key});
+  final CartModel? pedido;
+
+  const FinishCartPage({super.key, this.pedido});
 
   @override
   State<FinishCartPage> createState() => _FinishCartPageState();
@@ -19,6 +22,72 @@ class FinishCartPage extends StatefulWidget {
 class _FinishCartPageState extends State<FinishCartPage>
     with Messages<FinishCartPage> {
   final TextEditingController _descontoController = TextEditingController();
+
+  late final FinishCartCubit cubit;
+
+  @override
+  void initState() {
+    super.initState();
+    cubit = context.read<FinishCartCubit>();
+
+    if (widget.pedido != null) {
+      _reconstruirPedido(widget.pedido!);
+    }
+  }
+
+  Future<void> _reconstruirPedido(CartModel pedido) async {
+    await Future.wait([
+      cubit.fetchClientes(),
+      cubit.fetchTiposPagamento(),
+      cubit.fetchCondicoesPagamento(),
+      cubit.fetchProdutosLocais(),
+    ]);
+
+    final cliente = cubit.clientesLista.firstWhere(
+          (c) => c.codigo == pedido.idCliente,
+      orElse: () => CustomerModel(
+        codigo: '',
+        cliente: '',
+        endereco: '',
+        bairro: '',
+        cidade: '',
+        uf: '',
+        restricao: '',
+        limiteCredito: '',
+      ),
+    );
+    cubit.setCliente(cliente);
+
+    final tipo = cubit.tiposPagamento.firstWhere(
+          (t) => t.codigo == pedido.idTpPag,
+      orElse: () => TipoPagamentoModel(codigo: '', descricao: ''),
+    );
+    cubit.setTipoPagamento(tipo);
+
+    final cond = cubit.condicoesPagamento.firstWhere(
+          (c) => c.codigo == pedido.idCondPag,
+      orElse: () => CondicaoPagamentoModel(codigo: '', descricao: ''),
+    );
+    cubit.setCondicaoPagamento(cond);
+
+    final produtosReconstruidos = pedido.produtos.map((p) {
+      final local = cubit.produtosLista.firstWhere(
+            (prod) => prod.codigo == p.idProduto,
+        orElse: () => ConsultProductModel(
+          codigo: p.idProduto,
+          produto: 'Produto #${p.idProduto}',
+          preco: p.preco,
+          estoque: '0',
+          imagem: '',
+          quantidade: p.quantidade,
+        ),
+      );
+      return local.copyWith(quantidade: p.quantidade);
+    }).toList();
+
+    cubit.setProdutos(produtosReconstruidos);
+    cubit.setObservacao(pedido.obsPed);
+  }
 
   bool validateFields(FinishCartState state) {
     if (state.cliente == null) {
@@ -56,8 +125,6 @@ class _FinishCartPageState extends State<FinishCartPage>
 
   @override
   Widget build(BuildContext context) {
-    final cubit = context.read<FinishCartCubit>();
-
     return Scaffold(
       appBar: AppBar(title: const Text("Adicionar Pedido")),
       body: Stack(
@@ -72,11 +139,8 @@ class _FinishCartPageState extends State<FinishCartPage>
                   showSuccess(state.successMessage ?? "Pedido salvo com sucesso!");
                   cubit.resetarCampos();
                   _descontoController.clear();
-
                   LocalOrdersPage.updateNotifier.value =
                   !LocalOrdersPage.updateNotifier.value;
-
-
                   Navigator.pop(context);
                 },
                 error: () {
@@ -116,8 +180,10 @@ class _FinishCartPageState extends State<FinishCartPage>
                     ),
                     const SizedBox(height: 10),
                     TextField(
-                      decoration: const InputDecoration(labelText: "Observações"),
+                      decoration:
+                      const InputDecoration(labelText: "Observações"),
                       onChanged: cubit.setObservacao,
+                      controller: TextEditingController(text: widget.pedido?.obsPed ?? ''),
                     ),
                     const SizedBox(height: 20),
                     Row(
@@ -125,7 +191,8 @@ class _FinishCartPageState extends State<FinishCartPage>
                       children: [
                         const Text(
                           "Produtos",
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                         ElevatedButton(
                           onPressed: () async {
@@ -142,7 +209,8 @@ class _FinishCartPageState extends State<FinishCartPage>
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.lightBlue[50],
-                            foregroundColor: Theme.of(context).colorScheme.primary,
+                            foregroundColor:
+                            Theme.of(context).colorScheme.primary,
                           ),
                           child: const Text("+ Adicionar"),
                         ),
@@ -165,7 +233,8 @@ class _FinishCartPageState extends State<FinishCartPage>
                                 "Qtd: ${p.quantidade} • Preço: R\$ ${p.preco.replaceAll(',', '.')}",
                               ),
                               trailing: IconButton(
-                                icon: const Icon(Icons.delete, color: Colors.red),
+                                icon: const Icon(Icons.delete,
+                                    color: Colors.red),
                                 onPressed: () {
                                   setState(() {
                                     cubit.state.produtos.removeAt(index);
@@ -182,7 +251,8 @@ class _FinishCartPageState extends State<FinishCartPage>
                     const SizedBox(height: 20),
                     GestureDetector(
                       onTap: () async {
-                        final condicoes = await cubit.fetchCondicoesPagamento();
+                        final condicoes =
+                        await cubit.fetchCondicoesPagamento();
                         if (!mounted) return;
                         _showSearch<CondicaoPagamentoModel>(
                           context: context,
@@ -193,8 +263,10 @@ class _FinishCartPageState extends State<FinishCartPage>
                         );
                       },
                       child: InputDecorator(
-                        decoration: const InputDecoration(labelText: "Condição de Pagamento"),
-                        child: Text(state.condicaoPagamento?.descricao ?? "Selecionar"),
+                        decoration: const InputDecoration(
+                            labelText: "Condição de Pagamento"),
+                        child: Text(state.condicaoPagamento?.descricao ??
+                            "Selecionar"),
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -211,8 +283,10 @@ class _FinishCartPageState extends State<FinishCartPage>
                         );
                       },
                       child: InputDecorator(
-                        decoration: const InputDecoration(labelText: "Tipo de Pagamento"),
-                        child: Text(state.tipoPagamento?.descricao ?? "Selecionar"),
+                        decoration: const InputDecoration(
+                            labelText: "Tipo de Pagamento"),
+                        child: Text(
+                            state.tipoPagamento?.descricao ?? "Selecionar"),
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -234,26 +308,39 @@ class _FinishCartPageState extends State<FinishCartPage>
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             const Text("Total Pedido",
-                                style: TextStyle(fontWeight: FontWeight.bold)),
-                            Text("R\$ ${totalComDesconto.toStringAsFixed(2)}",
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 18)),
+                                style:
+                                TextStyle(fontWeight: FontWeight.bold)),
+                            Text(
+                              "R\$ ${totalComDesconto.toStringAsFixed(2)}",
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 18),
+                            ),
                           ],
                         ),
                       ),
                     ),
-
                     Row(
                       children: [
                         Expanded(
                           child: ElevatedButton(
-                            onPressed: () {
+                            onPressed: () async {
                               if (!validateFields(state)) return;
-                              cubit.salvarLocalmente(
-                                double.tryParse(
-                                    _descontoController.text.replaceAll(',', '.')) ??
-                                    0.0,
-                              );
+
+                              final desconto = double.tryParse(
+                                  _descontoController.text.replaceAll(',', '.')) ?? 0.0;
+
+                              try {
+                                final pedido = await cubit.montarPedidoComDesconto(desconto);
+
+                                final pedidoFinal = pedido.copyWith(
+                                  numPed: cubit.state.pedidoEmEdicao?.numPed ?? pedido.numPed,
+                                );
+
+                                await cubit.salvarPedidoLocal(pedidoFinal);
+                              } catch (e) {
+                                print("Erro ao salvar pedido: $e");
+                                showError("Erro ao salvar pedido.");
+                              }
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.green,
@@ -320,8 +407,9 @@ class _FinishCartPageState extends State<FinishCartPage>
                   onChanged: (value) {
                     setDialogState(() {
                       filtered = items
-                          .where((e) =>
-                          display(e).toLowerCase().contains(value.toLowerCase()))
+                          .where((e) => display(e)
+                          .toLowerCase()
+                          .contains(value.toLowerCase()))
                           .toList();
                     });
                   },
@@ -349,6 +437,26 @@ class _FinishCartPageState extends State<FinishCartPage>
           ),
         ),
       ),
+    );
+  }
+}
+
+extension ConsultProductCopy on ConsultProductModel {
+  ConsultProductModel copyWith({
+    String? codigo,
+    String? produto,
+    String? preco,
+    String? estoque,
+    String? imagem,
+    int? quantidade,
+  }) {
+    return ConsultProductModel(
+      codigo: codigo ?? this.codigo,
+      produto: produto ?? this.produto,
+      preco: preco ?? this.preco,
+      estoque: estoque ?? this.estoque,
+      imagem: imagem ?? this.imagem,
+      quantidade: quantidade ?? this.quantidade,
     );
   }
 }
