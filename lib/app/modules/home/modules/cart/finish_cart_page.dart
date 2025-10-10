@@ -22,6 +22,7 @@ class FinishCartPage extends StatefulWidget {
 class _FinishCartPageState extends State<FinishCartPage>
     with Messages<FinishCartPage> {
   final TextEditingController _descontoController = TextEditingController();
+  final TextEditingController _observacaoController = TextEditingController();
 
   late final FinishCartCubit cubit;
 
@@ -30,6 +31,9 @@ class _FinishCartPageState extends State<FinishCartPage>
     super.initState();
     cubit = context.read<FinishCartCubit>();
 
+    _observacaoController.text = widget.pedido?.obsPed ?? '';
+    _descontoController.text = widget.pedido?.valDesc ?? '0,00';
+
     if (widget.pedido != null) {
       _reconstruirPedido(widget.pedido!);
     }
@@ -37,10 +41,10 @@ class _FinishCartPageState extends State<FinishCartPage>
 
   Future<void> _reconstruirPedido(CartModel pedido) async {
     await Future.wait([
+      cubit.fetchProdutosLocais(),
       cubit.fetchClientes(),
       cubit.fetchTiposPagamento(),
       cubit.fetchCondicoesPagamento(),
-      cubit.fetchProdutosLocais(),
     ]);
 
     final cliente = cubit.clientesLista.firstWhere(
@@ -70,23 +74,38 @@ class _FinishCartPageState extends State<FinishCartPage>
     );
     cubit.setCondicaoPagamento(cond);
 
-    final produtosReconstruidos = pedido.produtos.map((p) {
-      final local = cubit.produtosLista.firstWhere(
-            (prod) => prod.codigo == p.idProduto,
-        orElse: () => ConsultProductModel(
+    List<ConsultProductModel> produtosReconstruidos = [];
+    if (cubit.produtosLista.isNotEmpty) {
+      produtosReconstruidos = pedido.produtos.map((p) {
+        final local = cubit.produtosLista.firstWhere(
+              (prod) => prod.codigo == p.idProduto,
+          orElse: () => ConsultProductModel(
+            codigo: p.idProduto,
+            produto: 'Produto #${p.idProduto}',
+            preco: p.preco,
+            estoque: '0',
+            imagem: '',
+            quantidade: p.quantidade,
+          ),
+        );
+        return local.copyWith(quantidade: p.quantidade);
+      }).toList();
+    } else {
+      produtosReconstruidos = pedido.produtos.map((p) {
+        return ConsultProductModel(
           codigo: p.idProduto,
           produto: 'Produto #${p.idProduto}',
           preco: p.preco,
           estoque: '0',
           imagem: '',
           quantidade: p.quantidade,
-        ),
-      );
-      return local.copyWith(quantidade: p.quantidade);
-    }).toList();
+        );
+      }).toList();
+    }
 
     cubit.setProdutos(produtosReconstruidos);
     cubit.setObservacao(pedido.obsPed);
+    _descontoController.text = pedido.valDesc ?? '0,00';
   }
 
   bool validateFields(FinishCartState state) {
@@ -139,6 +158,7 @@ class _FinishCartPageState extends State<FinishCartPage>
                   showSuccess(state.successMessage ?? "Pedido salvo com sucesso!");
                   cubit.resetarCampos();
                   _descontoController.clear();
+                  _observacaoController.clear();
                   LocalOrdersPage.updateNotifier.value =
                   !LocalOrdersPage.updateNotifier.value;
                   Navigator.pop(context);
@@ -180,10 +200,9 @@ class _FinishCartPageState extends State<FinishCartPage>
                     ),
                     const SizedBox(height: 10),
                     TextField(
-                      decoration:
-                      const InputDecoration(labelText: "Observações"),
+                      controller: _observacaoController,
+                      decoration: const InputDecoration(labelText: "Observações"),
                       onChanged: cubit.setObservacao,
-                      controller: TextEditingController(text: widget.pedido?.obsPed ?? ''),
                     ),
                     const SizedBox(height: 20),
                     Row(
@@ -295,6 +314,12 @@ class _FinishCartPageState extends State<FinishCartPage>
                       keyboardType: TextInputType.number,
                       decoration: const InputDecoration(
                           labelText: "Desconto", prefixText: "R\$ "),
+                      onTap: () {
+                        _descontoController.selection = TextSelection(
+                          baseOffset: 0,
+                          extentOffset: _descontoController.text.length,
+                        );
+                      },
                       onChanged: (_) => setState(() {}),
                     ),
                     const SizedBox(height: 20),
@@ -327,13 +352,18 @@ class _FinishCartPageState extends State<FinishCartPage>
                               if (!validateFields(state)) return;
 
                               final desconto = double.tryParse(
-                                  _descontoController.text.replaceAll(',', '.')) ?? 0.0;
+                                  _descontoController.text
+                                      .replaceAll(',', '.')) ??
+                                  0.0;
 
                               try {
-                                final pedido = await cubit.montarPedidoComDesconto(desconto);
+                                final pedido =
+                                await cubit.montarPedidoComDesconto(desconto);
 
                                 final pedidoFinal = pedido.copyWith(
-                                  numPed: cubit.state.pedidoEmEdicao?.numPed ?? pedido.numPed,
+                                  valDesc: desconto.toStringAsFixed(2).replaceAll('.', ','),
+                                  numPed: cubit.state.pedidoEmEdicao?.numPed ??
+                                      pedido.numPed,
                                 );
 
                                 await cubit.salvarPedidoLocal(pedidoFinal);
@@ -355,6 +385,7 @@ class _FinishCartPageState extends State<FinishCartPage>
                             onPressed: () {
                               cubit.resetarCampos();
                               _descontoController.clear();
+                              _observacaoController.clear();
                               Navigator.pop(context);
                             },
                             style: ElevatedButton.styleFrom(

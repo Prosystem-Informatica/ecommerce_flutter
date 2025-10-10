@@ -33,6 +33,8 @@ class _LocalOrdersPageState extends State<LocalOrdersPage>
   Future<void> _loadClientes() async {
     final cubit = context.read<FinishCartCubit>();
     await cubit.fetchClientes();
+    await cubit.fetchCondicoesPagamento();
+    await cubit.fetchTiposPagamento();
     if (!mounted) return;
     setState(() {});
   }
@@ -77,18 +79,13 @@ class _LocalOrdersPageState extends State<LocalOrdersPage>
     await cubit.fetchCondicoesPagamento();
     await cubit.fetchTiposPagamento();
 
-    final clientesMap = {
-      for (var c in cubit.clientesLista) c.codigo: c.cliente,
-    };
-    final produtosMap = {
-      for (var p in cubit.produtosLista) p.codigo: p.produto,
-    };
-    final condicoesMap = {
-      for (var c in cubit.condicoesPagamento) c.codigo: c.descricao,
-    };
-    final tiposMap = {
-      for (var t in cubit.tiposPagamento) t.codigo: t.descricao,
-    };
+    cubit.setProdutosDoPedido(order.produtos);
+    cubit.setPedidoEmEdicao(order);
+
+    final clientesMap = {for (var c in cubit.clientesLista) c.codigo: c.cliente};
+    final produtosMap = {for (var p in cubit.produtosLista) p.codigo: p.produto};
+    final condicoesMap = {for (var c in cubit.condicoesPagamento) c.codigo: c.descricao};
+    final tiposMap = {for (var t in cubit.tiposPagamento) t.codigo: t.descricao};
 
     await showModalBottomSheet(
       context: context,
@@ -97,15 +94,17 @@ class _LocalOrdersPageState extends State<LocalOrdersPage>
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       builder: (ctx) {
-        String formatar(double valor) =>
-            valor.toStringAsFixed(2).replaceAll('.', ',');
+        String formatar(double valor) => valor.toStringAsFixed(2).replaceAll('.', ',');
 
-        double total =
-            double.tryParse(order.totalPed.replaceAll(',', '.')) ?? 0.0;
-        double desconto =
-            double.tryParse(order.valDesc.replaceAll(',', '.')) ?? 0.0;
+        double totalBruto = 0.0;
+        for (var item in order.produtos) {
+          final preco = double.tryParse(item.preco.replaceAll(',', '.')) ?? 0.0;
+          totalBruto += preco * item.quantidade;
+        }
 
-        double totalComDesconto = total;
+        double desconto = double.tryParse(order.valDesc.replaceAll(',', '.')) ?? 0.0;
+        double totalComDesconto = totalBruto - desconto;
+        if (totalComDesconto < 0) totalComDesconto = 0;
 
         return Padding(
           padding: EdgeInsets.only(
@@ -148,11 +147,15 @@ class _LocalOrdersPageState extends State<LocalOrdersPage>
                 ),
                 const SizedBox(height: 8),
                 Text(
+                  "Total Bruto: R\$ ${formatar(totalBruto)}",
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                Text(
                   "Desconto: R\$ ${formatar(desconto)}",
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  "Total do Pedido: R\$ ${formatar(totalComDesconto)}",
+                  "Total com Desconto: R\$ ${formatar(totalComDesconto)}",
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
@@ -164,8 +167,7 @@ class _LocalOrdersPageState extends State<LocalOrdersPage>
                     itemCount: order.produtos.length,
                     itemBuilder: (context, i) {
                       final item = order.produtos[i];
-                      final preco =
-                          double.tryParse(item.preco.replaceAll(',', '.')) ?? 0;
+                      final preco = double.tryParse(item.preco.replaceAll(',', '.')) ?? 0;
                       final totalItem = preco * item.quantidade;
                       return Padding(
                         padding: const EdgeInsets.all(4.0),
@@ -197,44 +199,37 @@ class _LocalOrdersPageState extends State<LocalOrdersPage>
                         icon: const Icon(Icons.edit),
                         label: const Text("Editar"),
                         onPressed: () async {
-                          final clienteSelecionado = cubit.clientesLista
-                              .firstWhere(
+                          final clienteSelecionado = cubit.clientesLista.firstWhere(
                                 (c) => c.codigo == order.idCliente,
-                                orElse: () => cubit.clientesLista.first,
-                              );
+                            orElse: () => cubit.clientesLista.first,
+                          );
 
-                          final condicaoSelecionada = cubit.condicoesPagamento
-                              .firstWhere(
+                          final condicaoSelecionada = cubit.condicoesPagamento.firstWhere(
                                 (c) => c.codigo == order.idCondPag,
-                                orElse: () => cubit.condicoesPagamento.first,
-                              );
+                            orElse: () => cubit.condicoesPagamento.first,
+                          );
 
-                          final tipoSelecionado = cubit.tiposPagamento
-                              .firstWhere(
+                          final tipoSelecionado = cubit.tiposPagamento.firstWhere(
                                 (t) => t.codigo == order.idTpPag,
-                                orElse: () => cubit.tiposPagamento.first,
-                              );
+                            orElse: () => cubit.tiposPagamento.first,
+                          );
 
                           cubit.setCliente(clienteSelecionado);
                           cubit.setCondicaoPagamento(condicaoSelecionada);
                           cubit.setTipoPagamento(tipoSelecionado);
-
                           cubit.setProdutosDoPedido(order.produtos);
-
                           cubit.setPedidoEmEdicao(order);
 
                           Navigator.of(ctx).pop();
 
-                          final atualizado = await Navigator.push<bool>(
+                          await Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const FinishCartPage(),
+                              builder: (_) => FinishCartPage(pedido: order),
                             ),
                           );
 
-                          if (atualizado == true) {
-                            _loadLocalOrders();
-                          }
+                          _loadLocalOrders();
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.orange,
@@ -251,8 +246,7 @@ class _LocalOrdersPageState extends State<LocalOrdersPage>
                           await cubit.excluirPedidoLocal(order.numPed);
                           if ((cubit.state.successMessage ?? '').isNotEmpty) {
                             showSuccess(cubit.state.successMessage!);
-                          } else if ((cubit.state.errorMessage ?? '')
-                              .isNotEmpty) {
+                          } else if ((cubit.state.errorMessage ?? '').isNotEmpty) {
                             showError(cubit.state.errorMessage!);
                           }
                           cubit.limparMensagens();
@@ -280,6 +274,8 @@ class _LocalOrdersPageState extends State<LocalOrdersPage>
   @override
   Widget build(BuildContext context) {
     final filteredOrders = getFilteredOrders(localOrders);
+    final cubit = context.read<FinishCartCubit>();
+    final clientesMap = {for (var c in cubit.clientesLista) c.codigo: c.cliente};
 
     return Scaffold(
       body: Stack(
@@ -311,54 +307,41 @@ class _LocalOrdersPageState extends State<LocalOrdersPage>
                 ),
               ),
               Expanded(
-                child:
-                    filteredOrders.isEmpty
-                        ? const Center(child: Text('Nenhum pedido salvo'))
-                        : ListView.separated(
-                          itemCount: filteredOrders.length,
-                          separatorBuilder:
-                              (_, __) => const SizedBox(height: 8),
-                          itemBuilder: (context, index) {
-                            final order = filteredOrders[index];
+                child: filteredOrders.isEmpty
+                    ? const Center(child: Text('Nenhum pedido salvo'))
+                    : ListView.separated(
+                  itemCount: filteredOrders.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  itemBuilder: (context, index) {
+                    final order = filteredOrders[index];
 
-                            final cubit = context.read<FinishCartCubit>();
-                            cubit.fetchClientes();
-                            final clientesMap = {
-                              for (var c in cubit.clientesLista)
-                                c.codigo: c.cliente,
-                            };
-
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                              ),
-                              child: Card(
-                                color: Colors.lightBlue[50],
-                                elevation: 3,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: InkWell(
-                                  borderRadius: BorderRadius.circular(12),
-                                  onTap: () => _abrirDetalhes(order),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: ListTileOrdersWidget(
-                                      order: {
-                                        'number': order.numPed,
-                                        'client':
-                                            clientesMap[order.idCliente] ??
-                                            order.idCliente,
-                                        'total': order.totalPed,
-                                        'date': order.dataPed,
-                                      },
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Card(
+                        color: Colors.lightBlue[50],
+                        elevation: 3,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(12),
+                          onTap: () => _abrirDetalhes(order),
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: ListTileOrdersWidget(
+                              order: {
+                                'number': order.numPed,
+                                'client': clientesMap[order.idCliente] ?? order.idCliente,
+                                'total': 'R\$ ${order.totalPed.replaceAll('.', ',')}',
+                                'date': order.dataPed,
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
             ],
           ),

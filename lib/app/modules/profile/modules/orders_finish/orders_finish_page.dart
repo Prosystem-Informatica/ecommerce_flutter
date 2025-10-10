@@ -109,14 +109,22 @@ class _OrdersFinishPageState extends State<OrdersFinishPage> {
       return;
     }
 
-    double totalItens = details.fold(0, (acc, item) {
-      final t = double.tryParse(item.total.replaceAll(',', '.')) ?? 0;
-      return acc + t;
-    });
-
+    double totalBruto = 0;
+    for (var item in details) {
+      final preco = double.tryParse(item.prcUnit.replaceAll(',', '.')) ?? 0;
+      double quantidade = 0;
+      if (item.quant is String) {
+        quantidade = double.tryParse(item.quant.replaceAll(',', '.')) ?? 0;
+      } else if (item.quant is int) {
+        quantidade = (item.quant as int).toDouble();
+      } else if (item.quant is double) {
+        quantidade = item.quant as double;
+      }
+      totalBruto += preco * quantidade;
+    }
 
     final desconto = double.tryParse(order.desconto.replaceAll(',', '.')) ?? 0;
-    final totalComDesconto = totalItens - desconto;
+    final totalComDesconto = totalBruto - desconto;
 
     String formatar(double valor) => valor.toStringAsFixed(2).replaceAll('.', ',');
 
@@ -149,24 +157,38 @@ class _OrdersFinishPageState extends State<OrdersFinishPage> {
               Text("Condição de Pagamento: $condicao", style: const TextStyle(fontWeight: FontWeight.bold)),
               Text("Forma: $forma", style: const TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
+
+              Text("Total Bruto: R\$ ${formatar(totalBruto)}", style: const TextStyle(fontWeight: FontWeight.bold)),
               Text("Desconto: R\$ ${formatar(desconto)}", style: const TextStyle(fontWeight: FontWeight.bold)),
-              Text("Total do Pedido: R\$ ${formatar(totalComDesconto)}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              Text("Total com Desconto: R\$ ${formatar(totalComDesconto)}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+
               const SizedBox(height: 12),
               Expanded(
                 child: ListView.builder(
                   itemCount: details.length,
                   itemBuilder: (context, i) {
                     final item = details[i];
+
+                    final precoUnit = double.tryParse(item.prcUnit.replaceAll(',', '.')) ?? 0;
+                    double quantidade = 0;
+                    if (item.quant is String) {
+                      quantidade = double.tryParse(item.quant.replaceAll(',', '.')) ?? 0;
+                    } else if (item.quant is int) {
+                      quantidade = (item.quant as int).toDouble();
+                    } else if (item.quant is double) {
+                      quantidade = item.quant as double;
+                    }
+                    final totalItem = precoUnit * quantidade;
+
                     return Padding(
                       padding: const EdgeInsets.all(4.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text("${item.produto} (COD: ${item.codProd})",
-                              style: const TextStyle(fontWeight: FontWeight.bold)),
+                          Text("${item.produto} (COD: ${item.codProd})", style: const TextStyle(fontWeight: FontWeight.bold)),
                           const SizedBox(height: 2),
-                          Text("Qtd: ${item.quant} - Unit: R\$ ${item.prcUnit}"),
-                          Text("Total: R\$ ${item.total}"),
+                          Text("Qtd: ${quantidade.toStringAsFixed(0)} - Unit: R\$ ${precoUnit.toStringAsFixed(2).replaceAll('.', ',')}"),
+                          Text("Total: R\$ ${totalItem.toStringAsFixed(2).replaceAll('.', ',')}"),
                           const Divider(height: 8),
                         ],
                       ),
@@ -338,7 +360,8 @@ class _OrdersFinishPageState extends State<OrdersFinishPage> {
                                   order: {
                                     'number': order.pedido,
                                     'client': order.cliente,
-                                    'total': order.total,
+                                    'total':
+                                    'R\$ ${(double.tryParse(order.total.toString().replaceAll(',', '.')) ?? 0).toStringAsFixed(2).replaceAll('.', ',')}',
                                     'date': order.data,
                                   },
                                 ),

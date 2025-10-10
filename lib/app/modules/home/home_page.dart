@@ -6,7 +6,6 @@ import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../profile/profile_page.dart';
-import 'modules/cart/finish_cart_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -38,6 +37,7 @@ class _HomePageState extends State<HomePage> {
 
   String formatCamelCase(String text) {
     if (text.isEmpty) return text;
+
     final words = text.split(' ');
     return words.map((word) {
       if (word.isEmpty) return word;
@@ -48,6 +48,7 @@ class _HomePageState extends State<HomePage> {
   Future<void> _loadUserLogin() async {
     final prefs = await SharedPreferences.getInstance();
     final login = prefs.getString('userLogin');
+
     setState(() {
       userLogin = login;
     });
@@ -55,26 +56,32 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = Theme
+        .of(context)
+        .colorScheme;
 
     return Stack(
       children: [
         Positioned.fill(
-          child: Image.asset("assets/bg-login.jpg", fit: BoxFit.cover),
+          child: Image.asset(
+            "assets/bg-login.jpg",
+            fit: BoxFit.cover,
+          ),
         ),
+
         Scaffold(
           backgroundColor: Colors.transparent,
           appBar: AppBar(
             title: Text(
               userLogin != null
-                  ? 'Bem-vindo, ${formatCamelCase(userLogin!)}'
+                  ? 'Bem-vindo , ${formatCamelCase(userLogin!)}'
                   : 'Bem-vindo',
             ),
             backgroundColor: colorScheme.primary,
           ),
           floatingActionButton: FloatingActionButton(
-            onPressed: () async {
-              await Get.to(() => const FinishCartPage());
+            onPressed: () {
+              Get.toNamed("/finish_cart");
             },
             backgroundColor: colorScheme.primary,
             child: const Icon(Icons.add, color: Colors.white),
@@ -103,8 +110,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
-
-class Dashboard extends StatefulWidget {
+  class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
 
   @override

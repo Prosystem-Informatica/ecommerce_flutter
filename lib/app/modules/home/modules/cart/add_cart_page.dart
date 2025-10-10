@@ -72,6 +72,33 @@ class _ProductListPageState extends State<ProductListPage> {
     return sum + price * item.quantity;
   });
 
+  Future<void> _handleBackNavigation() async {
+    if (cart.isNotEmpty) {
+      await showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text("Carrinho com produtos."),
+          content: const Text("Você ainda tem produtos no carrinho. Deseja sair mesmo assim?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancelar"),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.pop(context);
+              },
+              child: const Text("Sair"),
+            ),
+          ],
+        ),
+      );
+    } else {
+      Navigator.pop(context);
+    }
+  }
+
   void _openCartModal() async {
     final cubit = context.read<FinishCartCubit>();
 
@@ -87,10 +114,11 @@ class _ProductListPageState extends State<ProductListPage> {
           return SingleChildScrollView(
             child: Padding(
               padding: EdgeInsets.only(
-                  bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-                  left: 16,
-                  right: 16,
-                  top: 16),
+                bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+                left: 16,
+                right: 16,
+                top: 16,
+              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -99,13 +127,11 @@ class _ProductListPageState extends State<ProductListPage> {
                     children: [
                       const Text(
                         "Carrinho",
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       IconButton(
                         icon: const Icon(Icons.close),
-                        onPressed: () =>
-                            Navigator.pop(context, <ConsultProductModel>[]),
+                        onPressed: () => Navigator.pop(context, <ConsultProductModel>[]),
                       ),
                     ],
                   ),
@@ -124,8 +150,8 @@ class _ProductListPageState extends State<ProductListPage> {
                       return ListTile(
                         leading: Image.network(
                           item.product.imagem,
-                          width: 40,
-                          height: 40,
+                          width: 50,
+                          height: 50,
                           fit: BoxFit.cover,
                           errorBuilder: (_, __, ___) =>
                               Image.asset('assets/no-image.jpeg'),
@@ -138,8 +164,7 @@ class _ProductListPageState extends State<ProductListPage> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.remove_circle,
-                                  color: Colors.red),
+                              icon: const Icon(Icons.remove_circle, color: Colors.red),
                               onPressed: () {
                                 removeFromCart(item.product);
                                 setModalState(() {});
@@ -148,8 +173,8 @@ class _ProductListPageState extends State<ProductListPage> {
                             Text('${item.quantity}',
                                 style: const TextStyle(fontSize: 16)),
                             IconButton(
-                              icon: const Icon(Icons.add_circle,
-                                  color: Colors.green),
+                              icon:
+                              const Icon(Icons.add_circle, color: Colors.green),
                               onPressed: () {
                                 addToCart(item.product);
                                 setModalState(() {});
@@ -163,8 +188,8 @@ class _ProductListPageState extends State<ProductListPage> {
                   const SizedBox(height: 10),
                   Text(
                     "Total: R\$ ${totalPrice.toStringAsFixed(2).replaceAll('.', ',')}",
-                    style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold),
+                    style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 10),
                   SizedBox(
@@ -221,16 +246,16 @@ class _ProductListPageState extends State<ProductListPage> {
       ),
       builder: (context) {
         return StatefulBuilder(builder: (context, setStateModal) {
-          double preco =
-              double.tryParse(product.preco.replaceAll(',', '.')) ?? 0.0;
+          double preco = double.tryParse(product.preco.replaceAll(',', '.')) ?? 0.0;
 
           return SingleChildScrollView(
             child: Padding(
               padding: EdgeInsets.only(
-                  bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-                  left: 16,
-                  right: 16,
-                  top: 16),
+                bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+                left: 16,
+                right: 16,
+                top: 16,
+              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -243,8 +268,6 @@ class _ProductListPageState extends State<ProductListPage> {
                       ),
                     ],
                   ),
-
-
                   Image.network(
                     product.imagem,
                     height: 150,
@@ -252,20 +275,16 @@ class _ProductListPageState extends State<ProductListPage> {
                     errorBuilder: (_, __, ___) =>
                         Image.asset('assets/no-image.jpeg', height: 150),
                   ),
-
                   const SizedBox(height: 10),
-
                   Text(
                     product.produto,
-                    style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 5),
                   Text("Código: ${product.codigo}",
                       style: const TextStyle(fontSize: 14)),
                   const SizedBox(height: 20),
-
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -278,8 +297,7 @@ class _ProductListPageState extends State<ProductListPage> {
                             });
                           }
                         },
-                        icon:
-                        const Icon(Icons.remove_circle, color: Colors.red),
+                        icon: const Icon(Icons.remove_circle, color: Colors.red),
                       ),
                       SizedBox(
                         width: 60,
@@ -321,17 +339,13 @@ class _ProductListPageState extends State<ProductListPage> {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 10),
-
                   Text(
                     "Total: R\$ ${(preco * quantity).toStringAsFixed(2).replaceAll('.', ',')}",
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold),
+                    style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
-
                   const SizedBox(height: 20),
-
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -368,6 +382,10 @@ class _ProductListPageState extends State<ProductListPage> {
       extendBody: true,
       appBar: AppBar(
         title: const Text('Selecionar Produtos'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: _handleBackNavigation,
+        ),
         actions: [
           IconButton(
             icon: Icon(isGrid ? Icons.list : Icons.grid_view),
@@ -413,9 +431,15 @@ class _ProductListPageState extends State<ProductListPage> {
                       );
                     }
 
-                    final products = (state.products ?? []).where((p) =>
-                    p.produto.toLowerCase().contains(searchQuery.toLowerCase()) ||
-                        p.codigo.toLowerCase().contains(searchQuery.toLowerCase())).toList();
+                    final products = (state.products ?? [])
+                        .where((p) =>
+                    p.produto
+                        .toLowerCase()
+                        .contains(searchQuery.toLowerCase()) ||
+                        p.codigo
+                            .toLowerCase()
+                            .contains(searchQuery.toLowerCase()))
+                        .toList();
 
                     if (products.isEmpty) {
                       return const Center(child: Text('Nenhum produto encontrado'));
@@ -423,7 +447,8 @@ class _ProductListPageState extends State<ProductListPage> {
 
                     if (isGrid) {
                       return GridView.builder(
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
                           childAspectRatio: 0.75,
                         ),
@@ -435,14 +460,26 @@ class _ProductListPageState extends State<ProductListPage> {
                             child: Card(
                               color: Colors.lightBlue[50],
                               elevation: 3,
+                              clipBehavior: Clip.antiAlias,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                               child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Expanded(
                                     child: Image.network(
-                                      product.imagem,
+                                      product.imagem.isNotEmpty
+                                          ? product.imagem
+                                          : 'assets/no-image.jpeg',
+                                      width: double.infinity,
                                       fit: BoxFit.cover,
                                       errorBuilder: (_, __, ___) =>
-                                          Image.asset('assets/no-image.jpeg'),
+                                          Image.asset(
+                                            'assets/no-image.jpeg',
+                                            fit: BoxFit.cover,
+                                            width: double.infinity,
+                                          ),
                                     ),
                                   ),
                                   Padding(
@@ -452,8 +489,7 @@ class _ProductListPageState extends State<ProductListPage> {
                                         Text(product.produto,
                                             textAlign: TextAlign.center),
                                         Text(
-                                          "R\$ ${product.preco} • Estoque: ${product.estoque}",
-                                        ),
+                                            "R\$ ${product.preco} • Estoque: ${product.estoque}"),
                                       ],
                                     ),
                                   ),
@@ -474,13 +510,22 @@ class _ProductListPageState extends State<ProductListPage> {
                           elevation: 3,
                           child: ListTile(
                             onTap: () => _openProductModal(product),
-                            leading: Image.network(
-                              product.imagem,
-                              width: 50,
-                              height: 50,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) =>
-                                  Image.asset('assets/no-image.jpeg'),
+                            leading: ClipRRect(
+                              borderRadius: BorderRadius.circular(6),
+                              child: Image.network(
+                                product.imagem.isNotEmpty
+                                    ? product.imagem
+                                    : 'assets/no-image.jpeg',
+                                width: 50,
+                                height: 50,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Image.asset(
+                                  'assets/no-image.jpeg',
+                                  width: 50,
+                                  height: 50,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
                             ),
                             title: Text(product.produto),
                             subtitle: Text(
