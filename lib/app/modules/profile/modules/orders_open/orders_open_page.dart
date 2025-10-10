@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../../core/ui/widget/list_tile_orders_widget.dart';
 import '../../../../repositories/order/model/order_model.dart';
 import '../../../../repositories/order/order_repository.dart';
@@ -126,7 +127,9 @@ class _OrdersOpenPageState extends State<OrdersOpenPage> {
                                   _modalAberto = true;
                                 });
 
-                                final repo = context.read<OrderBlocCubit>().orderRepository as OrderRepository;
+                                final repo = context
+                                    .read<OrderBlocCubit>()
+                                    .orderRepository as OrderRepository;
 
                                 final details = await repo.getOrderDetails(
                                   pedido: order.pedido,
@@ -135,7 +138,9 @@ class _OrdersOpenPageState extends State<OrdersOpenPage> {
 
                                 if (details.isEmpty) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text("Nenhum item encontrado")),
+                                    const SnackBar(
+                                        content:
+                                        Text("Nenhum item encontrado")),
                                   );
                                   setState(() {
                                     _modalAberto = false;
@@ -148,99 +153,204 @@ class _OrdersOpenPageState extends State<OrdersOpenPage> {
 
                                 double totalBruto = 0;
                                 for (var item in details) {
-                                  totalBruto += double.tryParse(item.total.replaceAll(',', '.')) ?? 0;
+                                  totalBruto += double.tryParse(
+                                      item.total.replaceAll(',', '.')) ??
+                                      0;
                                 }
 
-                                double desconto = double.tryParse(order.desconto.replaceAll(',', '.')) ?? 0;
+                                double desconto = double.tryParse(
+                                    order.desconto.replaceAll(',', '.')) ??
+                                    0;
 
                                 double totalComDesconto = totalBruto - desconto;
                                 if (totalComDesconto < 0) totalComDesconto = 0;
 
-                                String formatar(double valor) => valor.toStringAsFixed(2).replaceAll('.', ',');
+                                String formatar(double valor) => valor
+                                    .toStringAsFixed(2)
+                                    .replaceAll('.', ',');
 
                                 await showModalBottomSheet(
                                   context: context,
                                   isScrollControlled: true,
                                   shape: const RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                                    borderRadius: BorderRadius.vertical(
+                                        top: Radius.circular(16)),
                                   ),
                                   builder: (ctx) {
                                     return Padding(
-                                      padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+                                      padding: EdgeInsets.only(
+                                          bottom:
+                                          MediaQuery.of(ctx).viewInsets.bottom),
                                       child: Container(
                                         padding: const EdgeInsets.all(16),
-                                        height: MediaQuery.of(ctx).size.height * 0.65,
+                                        height:
+                                        MediaQuery.of(ctx).size.height * 0.65,
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                           children: [
                                             Row(
-                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
                                               children: [
                                                 Text(
                                                   "Pedido #${order.pedido}",
-                                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                                                  style: const TextStyle(
+                                                      fontWeight: FontWeight.bold,
+                                                      fontSize: 18),
                                                 ),
-                                                IconButton(
-                                                  onPressed: () => Navigator.of(ctx).pop(),
-                                                  icon: const Icon(Icons.close),
+                                                Row(
+                                                  children: [
+                                                    IconButton(
+                                                      icon: const Icon(
+                                                        Icons.share,
+                                                        color: Colors.blueAccent,
+                                                      ),
+                                                      onPressed: () async {
+                                                        final buffer =
+                                                        StringBuffer();
+                                                        buffer.writeln(
+                                                            "📦 *Pedido #${order.pedido}*");
+                                                        buffer.writeln(
+                                                            "👤 Cliente: ${order.cliente}");
+                                                        buffer.writeln(
+                                                            "💳 Condição: $condicao");
+                                                        buffer.writeln(
+                                                            "💰 Forma: $forma");
+                                                        buffer.writeln("");
+                                                        buffer.writeln("🧾 Itens:");
+
+                                                        for (var item in details) {
+                                                          final preco = double.tryParse(
+                                                              item.prcUnit
+                                                                  .replaceAll(
+                                                                  ',', '.')) ??
+                                                              0;
+                                                          double quantidade = 0;
+                                                          if (item.quant
+                                                          is String) {
+                                                            quantidade =
+                                                                double.tryParse(item
+                                                                    .quant
+                                                                    .replaceAll(
+                                                                    ',', '.')) ??
+                                                                    0;
+                                                          } else if (item.quant
+                                                          is int) {
+                                                            quantidade = (item
+                                                                .quant
+                                                            as int)
+                                                                .toDouble();
+                                                          } else if (item.quant
+                                                          is double) {
+                                                            quantidade = item
+                                                                .quant as double;
+                                                          }
+
+                                                          final totalItem =
+                                                              preco * quantidade;
+                                                          buffer.writeln(
+                                                              "• ${item.produto} (x${quantidade.toStringAsFixed(0)}) - R\$ ${totalItem.toStringAsFixed(2).replaceAll('.', ',')}");
+                                                        }
+
+                                                        buffer.writeln("");
+                                                        buffer.writeln(
+                                                            "🔹 Total Bruto: R\$ ${formatar(totalBruto)}");
+                                                        buffer.writeln(
+                                                            "🔹 Desconto: R\$ ${formatar(desconto)}");
+                                                        buffer.writeln(
+                                                            "🔹 Total Final: R\$ ${formatar(totalComDesconto)}");
+
+                                                        await Share.share(
+                                                            buffer.toString());
+                                                      },
+                                                    ),
+                                                    IconButton(
+                                                      onPressed: () =>
+                                                          Navigator.of(ctx).pop(),
+                                                      icon:
+                                                      const Icon(Icons.close),
+                                                    ),
+                                                  ],
                                                 ),
                                               ],
                                             ),
                                             const SizedBox(height: 8),
-                                            Text("Cliente: ${order.cliente}", style: const TextStyle(fontWeight: FontWeight.bold)),
-                                            Text("Condição de Pagamento: $condicao", style: const TextStyle(fontWeight: FontWeight.bold)),
-                                            Text("Forma: $forma", style: const TextStyle(fontWeight: FontWeight.bold)),
+                                            Text("Cliente: ${order.cliente}",
+                                                style: const TextStyle(
+                                                    fontWeight:
+                                                    FontWeight.bold)),
+                                            Text("Condição de Pagamento: $condicao",
+                                                style: const TextStyle(
+                                                    fontWeight:
+                                                    FontWeight.bold)),
+                                            Text("Forma: $forma",
+                                                style: const TextStyle(
+                                                    fontWeight:
+                                                    FontWeight.bold)),
                                             const SizedBox(height: 8),
-
-                                            Text("Total Bruto: R\$ ${formatar(totalBruto)}", style: const TextStyle(fontWeight: FontWeight.bold)),
-                                            Text("Desconto: R\$ ${formatar(desconto)}", style: const TextStyle(fontWeight: FontWeight.bold)),
-                                            Text("Total com Desconto: R\$ ${formatar(totalComDesconto)}",
-                                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                            Text(
+                                                "Total Bruto: R\$ ${formatar(totalBruto)}",
+                                                style: const TextStyle(
+                                                    fontWeight:
+                                                    FontWeight.bold)),
+                                            Text(
+                                                "Desconto: R\$ ${formatar(desconto)}",
+                                                style: const TextStyle(
+                                                    fontWeight:
+                                                    FontWeight.bold)),
+                                            Text(
+                                              "Total com Desconto: R\$ ${formatar(totalComDesconto)}",
+                                              style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 16),
                                             ),
                                             const SizedBox(height: 12),
-
                                             Expanded(
                                               child: ListView.separated(
                                                 itemCount: details.length,
-                                                separatorBuilder: (_, __) => const Divider(height: 1),
-                                                  itemBuilder: (context, i) {
-                                                    final item = details[i];
+                                                separatorBuilder:
+                                                    (_, __) => const Divider(
+                                                    height: 1),
+                                                itemBuilder: (context, i) {
+                                                  final item = details[i];
+                                                  final precoUnit =
+                                                      double.tryParse(item
+                                                          .prcUnit
+                                                          .replaceAll(
+                                                          ',', '.')) ??
+                                                          0;
 
-                                                    final precoUnit = double.tryParse(item.prcUnit.replaceAll(',', '.')) ?? 0;
+                                                  double quantidade = 0;
+                                                  if (item.quant is String) {
+                                                    quantidade =
+                                                        double.tryParse(item.quant.replaceAll(',', '.')) ?? 0;
+                                                  } else if (item.quant is int) {
+                                                    quantidade = (item.quant as int).toDouble();
+                                                  } else if (item.quant is double) {
+                                                    quantidade = item.quant as double;
+                                                  }
 
-                                                    double quantidade = 0;
-                                                    if (item.quant is String) {
-                                                      quantidade = double.tryParse(item.quant.replaceAll(',', '.')) ?? 0;
-                                                    } else if (item.quant is int) {
-                                                      quantidade = (item.quant as int).toDouble();
-                                                    } else if (item.quant is double) {
-                                                      quantidade = item.quant as double;
-                                                    }
+                                                  final totalItem = precoUnit * quantidade;
 
-                                                    final totalItem = precoUnit * quantidade;
-
-                                                    return Padding(
-                                                      padding: const EdgeInsets.all(4.0),
-                                                      child: Column(
-                                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                                        children: [
-                                                          Text(
-                                                            "${item.produto} (COD: ${item.codProd})",
-                                                            style: const TextStyle(
-                                                              fontWeight: FontWeight.bold,
-                                                            ),
+                                                  return Padding(
+                                                    padding: const EdgeInsets.all(4.0),
+                                                    child: Column(
+                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                      children: [
+                                                        Text(
+                                                          "${item.produto} (COD: ${item.codProd})",
+                                                          style: const TextStyle(
+                                                            fontWeight: FontWeight.bold,
                                                           ),
-                                                          const SizedBox(height: 2),
-                                                          Text(
-                                                            "Qtd: ${quantidade.toStringAsFixed(0)} - Unit: R\$ ${precoUnit.toStringAsFixed(2).replaceAll('.', ',')}",
-                                                          ),
-                                                          Text(
-                                                            "Total: R\$ ${totalItem.toStringAsFixed(2).replaceAll('.', ',')}",
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    );
-                                                  },
+                                                        ),
+                                                        const SizedBox(height: 2),
+                                                        Text("Qtd: ${quantidade.toStringAsFixed(0)} - Unit: R\$ ${precoUnit.toStringAsFixed(2).replaceAll('.', ',')}"),
+                                                        Text("Total: R\$ ${totalItem.toStringAsFixed(2).replaceAll('.', ',')}"),
+                                                      ],
+                                                    ),
+                                                  );
+                                                },
                                               ),
                                             ),
                                           ],
@@ -260,7 +370,8 @@ class _OrdersOpenPageState extends State<OrdersOpenPage> {
                                   order: {
                                     'number': order.pedido,
                                     'client': order.cliente,
-                                    'total': 'R\$ ${(double.tryParse(order.total.toString().replaceAll(',', '.')) ?? 0).toStringAsFixed(2).replaceAll('.', ',')}',
+                                    'total':
+                                    'R\$ ${(double.tryParse(order.total.toString().replaceAll(',', '.')) ?? 0).toStringAsFixed(2).replaceAll('.', ',')}',
                                     'date': order.data,
                                   },
                                 ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../../core/database/dao/cart/cart_dao.dart';
 import '../../../../core/ui/widget/list_tile_orders_widget.dart';
 import '../../../../repositories/finishCard/model/cart_model.dart';
@@ -106,6 +107,18 @@ class _LocalOrdersPageState extends State<LocalOrdersPage>
         double totalComDesconto = totalBruto - desconto;
         if (totalComDesconto < 0) totalComDesconto = 0;
 
+        void _compartilharPedido() {
+          final cliente = clientesMap[order.idCliente] ?? order.idCliente;
+          final texto = '''
+Pedido #${order.numPed}
+Cliente: $cliente
+Forma de Pagamento: ${tiposMap[order.idTpPag] ?? order.idTpPag}
+Condição: ${condicoesMap[order.idCondPag] ?? order.idCondPag}
+Total: R\$ ${formatar(totalComDesconto)}
+''';
+          Share.share(texto, subject: 'Detalhes do Pedido #${order.numPed}');
+        }
+
         return Padding(
           padding: EdgeInsets.only(
             bottom: MediaQuery.of(ctx).viewInsets.bottom,
@@ -126,9 +139,17 @@ class _LocalOrdersPageState extends State<LocalOrdersPage>
                         fontSize: 18,
                       ),
                     ),
-                    IconButton(
-                      onPressed: () => Navigator.of(ctx).pop(),
-                      icon: const Icon(Icons.close),
+                    Row(
+                      children: [
+                        IconButton(
+                          onPressed: _compartilharPedido,
+                          icon: const Icon(Icons.share, color: Colors.blueAccent),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.of(ctx).pop(),
+                          icon: const Icon(Icons.close),
+                        ),
+                      ],
                     ),
                   ],
                 ),
