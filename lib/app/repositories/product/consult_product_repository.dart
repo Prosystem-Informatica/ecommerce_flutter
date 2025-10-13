@@ -5,13 +5,13 @@ import 'i_consult_product_repository.dart';
 import 'model/consult_product_model.dart';
 
 class ConsultProductRepository implements IConsultProductRepository {
-  final String baseUrl = 'http://prosystem04.dyndns-work.com/datasnap/rest/TServerAPPecf';
+  final String baseUrl = 'http://prosystem04.dyndns-work.com:8080/datasnap/rest/TServerAPPecf';
   final String imageBaseUrl = 'http://prosystem04.dyndns-work.com/Fotos';
   final dao = ConsultProductDao();
 
   @override
   Future<List<ConsultProductModel>> getProducts() async {
-    final url = Uri.parse('$baseUrl/PesquisaProd');
+    final url = Uri.parse('$baseUrl/PesquisaProd//2');
 
     try {
       final response = await http.get(url);

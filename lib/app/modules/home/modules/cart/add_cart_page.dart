@@ -1,5 +1,7 @@
+import 'package:ecommerce/app/modules/home/modules/cart/finish_cart_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/services.dart';
 import '../../../../repositories/product/model/consult_product_model.dart';
 import '../../../profile/modules/consultProduct/cubit/consult_product_bloc_cubit.dart';
 import '../../../profile/modules/consultProduct/cubit/consult_product_bloc_state.dart';
@@ -35,7 +37,8 @@ class _ProductListPageState extends State<ProductListPage> {
   }
 
   void addToCart(ConsultProductModel product) {
-    final index = cart.indexWhere((item) => item.product.codigo == product.codigo);
+    final index =
+    cart.indexWhere((item) => item.product.codigo == product.codigo);
     if (index >= 0) {
       setState(() => cart[index].quantity++);
     } else {
@@ -44,7 +47,8 @@ class _ProductListPageState extends State<ProductListPage> {
   }
 
   void removeFromCart(ConsultProductModel product) {
-    final index = cart.indexWhere((item) => item.product.codigo == product.codigo);
+    final index =
+    cart.indexWhere((item) => item.product.codigo == product.codigo);
     if (index >= 0) {
       setState(() {
         if (cart[index].quantity > 1) {
@@ -57,7 +61,8 @@ class _ProductListPageState extends State<ProductListPage> {
   }
 
   void addToCartWithQuantity(ConsultProductModel product, int quantity) {
-    final index = cart.indexWhere((item) => item.product.codigo == product.codigo);
+    final index =
+    cart.indexWhere((item) => item.product.codigo == product.codigo);
     if (index >= 0) {
       setState(() => cart[index].quantity += quantity);
     } else {
@@ -68,7 +73,8 @@ class _ProductListPageState extends State<ProductListPage> {
   int get totalItems => cart.length;
 
   double get totalPrice => cart.fold(0.0, (sum, item) {
-    final price = double.tryParse(item.product.preco.replaceAll(',', '.')) ?? 0.0;
+    final price =
+        double.tryParse(item.product.preco.replaceAll(',', '.')) ?? 0.0;
     return sum + price * item.quantity;
   });
 
@@ -88,10 +94,8 @@ class _ProductListPageState extends State<ProductListPage> {
                   children: [
                     const Text(
                       "Carrinho com produtos",
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style:
+                      TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 16),
                     const Text("Deseja excluir o carrinho?"),
@@ -143,11 +147,11 @@ class _ProductListPageState extends State<ProductListPage> {
     }
   }
 
-
   void _openCartModal() async {
     final cubit = context.read<FinishCartCubit>();
 
-    final selectedProducts = await showModalBottomSheet<List<ConsultProductModel>>(
+    final selectedProducts =
+    await showModalBottomSheet<List<ConsultProductModel>>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.white,
@@ -155,120 +159,127 @@ class _ProductListPageState extends State<ProductListPage> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (_) {
-        return StatefulBuilder(builder: (context, setModalState) {
-          return SingleChildScrollView(
-            child: Padding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-                left: 16,
-                right: 16,
-                top: 16,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        "Carrinho",
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.close),
-                        onPressed: () => Navigator.pop(context, <ConsultProductModel>[]),
-                      ),
-                    ],
-                  ),
-                  const Divider(),
-                  cart.isEmpty
-                      ? const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 30),
-                    child: Center(child: Text('Carrinho vazio')),
-                  )
-                      : ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: cart.length,
-                    itemBuilder: (_, index) {
-                      final item = cart[index];
-                      return ListTile(
-                        leading: Image.network(
-                          item.product.imagem,
-                          width: 50,
-                          height: 50,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) =>
-                              Image.asset('assets/no-image.jpeg'),
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return SingleChildScrollView(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+                  left: 16,
+                  right: 16,
+                  top: 16,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          "Carrinho",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                        title: Text(item.product.produto),
-                        subtitle: Text(
-                          "Qtd: ${item.quantity} • R\$ ${item.product.preco}",
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () =>
+                              Navigator.pop(context, <ConsultProductModel>[]),
                         ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.remove_circle, color: Colors.red),
-                              onPressed: () {
-                                removeFromCart(item.product);
-                                setModalState(() {});
-                              },
-                            ),
-                            Text('${item.quantity}',
-                                style: const TextStyle(fontSize: 16)),
-                            IconButton(
-                              icon:
-                              const Icon(Icons.add_circle, color: Colors.green),
-                              onPressed: () {
-                                addToCart(item.product);
-                                setModalState(() {});
-                              },
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    "Total: R\$ ${totalPrice.toStringAsFixed(2).replaceAll('.', ',')}",
-                    style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 10),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        final productsToAdd = cart.map((e) {
-                          e.product.quantidade = e.quantity;
-                          return e.product;
-                        }).toList();
-                        cubit.setProdutos(productsToAdd);
-                        Navigator.pop(context, productsToAdd);
+                      ],
+                    ),
+                    const Divider(),
+                    cart.isEmpty
+                        ? const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 30),
+                      child: Center(child: Text('Carrinho vazio')),
+                    )
+                        : ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: cart.length,
+                      itemBuilder: (_, index) {
+                        final item = cart[index];
+                        return ListTile(
+                          leading: Image.network(
+                            item.product.imagem,
+                            width: 50,
+                            height: 50,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) =>
+                                Image.asset('assets/no-image.jpeg'),
+                          ),
+                          title: Text(item.product.produto),
+                          subtitle: Text(
+                              "Qtd: ${item.quantity} • R\$ ${item.product.preco}"),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.remove_circle,
+                                    color: Colors.red),
+                                onPressed: () {
+                                  removeFromCart(item.product);
+                                  setModalState(() {});
+                                },
+                              ),
+                              Text('${item.quantity}',
+                                  style:
+                                  const TextStyle(fontSize: 16)),
+                              IconButton(
+                                icon: const Icon(Icons.add_circle,
+                                    color: Colors.green),
+                                onPressed: () {
+                                  addToCart(item.product);
+                                  setModalState(() {});
+                                },
+                              ),
+                            ],
+                          ),
+                        );
                       },
-                      icon: const Icon(Icons.check),
-                      label: const Text(
-                        "Adicionar",
-                        style: TextStyle(
-                            color: Colors.white, fontWeight: FontWeight.bold),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      "Total: R\$ ${totalPrice.toStringAsFixed(2).replaceAll('.', ',')}",
+                      style: const TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          final productsToAdd = cart
+                              .map((e) => e.product.copyWith(
+                              quantidade: e.quantity))
+                              .toList();
+                          cubit.setProdutos(productsToAdd);
+                          Navigator.pop(context, productsToAdd);
+                        },
+                        icon: const Icon(Icons.check),
+                        label: const Text(
+                          "Adicionar",
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          );
-        });
+            );
+          },
+        );
       },
     );
 
@@ -279,8 +290,12 @@ class _ProductListPageState extends State<ProductListPage> {
 
   void _openProductModal(ConsultProductModel product) {
     int quantity = 1;
+    double preco = double.tryParse(product.preco.replaceAll(',', '.')) ?? 0.0;
+
     final TextEditingController quantityController =
     TextEditingController(text: quantity.toString());
+    final TextEditingController precoController =
+    TextEditingController(text: product.preco);
 
     showModalBottomSheet(
       context: context,
@@ -290,133 +305,172 @@ class _ProductListPageState extends State<ProductListPage> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
-        return StatefulBuilder(builder: (context, setStateModal) {
-          double preco = double.tryParse(product.preco.replaceAll(',', '.')) ?? 0.0;
+        return StatefulBuilder(
+          builder: (context, setStateModal) {
+            return SingleChildScrollView(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+                  left: 16,
+                  right: 16,
+                  top: 16,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
+                    ),
+                    Image.network(
+                      product.imagem,
+                      height: 150,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) =>
+                          Image.asset('assets/no-image.jpeg', height: 150),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      product.produto,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      "Código: ${product.codigo}",
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                    const SizedBox(height: 20),
 
-          return SingleChildScrollView(
-            child: Padding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-                left: 16,
-                right: 16,
-                top: 16,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.close),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                    ],
-                  ),
-                  Image.network(
-                    product.imagem,
-                    height: 150,
-                    fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) =>
-                        Image.asset('assets/no-image.jpeg', height: 150),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    product.produto,
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 5),
-                  Text("Código: ${product.codigo}",
-                      style: const TextStyle(fontSize: 14)),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      IconButton(
-                        onPressed: () {
-                          if (quantity > 1) {
-                            setStateModal(() {
-                              quantity--;
-                              quantityController.text = quantity.toString();
-                            });
-                          }
-                        },
-                        icon: const Icon(Icons.remove_circle, color: Colors.red),
-                      ),
-                      SizedBox(
-                        width: 60,
-                        child: TextField(
-                          controller: quantityController,
-                          textAlign: TextAlign.center,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            isDense: true,
-                            contentPadding:
-                            EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text(
+                          "Preço (R\$): ",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        SizedBox(
+                          width: 100,
+                          child: TextField(
+                            controller: precoController,
+                            textAlign: TextAlign.center,
+                            keyboardType:
+                            const TextInputType.numberWithOptions(decimal: true),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                  RegExp(r'^\d*[,\.]?\d{0,2}')),
+                            ],
+                            onTap: () {
+                              precoController.selection = TextSelection(
+                                baseOffset: 0,
+                                extentOffset: precoController.text.length,
+                              );
+                            },
+                            onChanged: (value) {
+                              setStateModal(() {
+                                preco = double.tryParse(value.replaceAll(',', '.')) ?? preco;
+                              });
+                            },
                           ),
-                          onTap: () {
-                            quantityController.selection = TextSelection(
-                              baseOffset: 0,
-                              extentOffset: quantityController.text.length,
-                            );
-                          },
-                          onChanged: (value) {
-                            int? val = int.tryParse(value);
-                            if (val != null && val > 0) {
-                              setStateModal(() => quantity = val);
-                            } else {
-                              setStateModal(() => quantity = 1);
-                              quantityController.text = '1';
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        IconButton(
+                          onPressed: () {
+                            if (quantity > 1) {
+                              setStateModal(() {
+                                quantity--;
+                                quantityController.text = quantity.toString();
+                              });
                             }
                           },
+                          icon: const Icon(Icons.remove_circle, color: Colors.red),
                         ),
-                      ),
-                      IconButton(
+                        SizedBox(
+                          width: 60,
+                          child: TextField(
+                            controller: quantityController,
+                            textAlign: TextAlign.center,
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly
+                            ],
+                            onTap: () {
+                              quantityController.selection = TextSelection(
+                                baseOffset: 0,
+                                extentOffset: quantityController.text.length,
+                              );
+                            },
+                            onChanged: (value) {
+                              int? val = int.tryParse(value);
+                              setStateModal(() {
+                                quantity = val != null && val > 0 ? val : 1;
+                                quantityController.text = quantity.toString();
+                              });
+                            },
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () {
+                            setStateModal(() {
+                              quantity++;
+                              quantityController.text = quantity.toString();
+                            });
+                          },
+                          icon: const Icon(Icons.add_circle, color: Colors.green),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 10),
+                    Text(
+                      "Total: R\$ ${(preco * quantity).toStringAsFixed(2).replaceAll('.', ',')}",
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
                         onPressed: () {
-                          setStateModal(() {
-                            quantity++;
-                            quantityController.text = quantity.toString();
-                          });
+                          final updatedProduct = product.copyWith(
+                            preco: preco.toStringAsFixed(2).replaceAll('.', ','),
+                          );
+                          addToCartWithQuantity(updatedProduct, quantity);
+                          Navigator.pop(context);
                         },
-                        icon: const Icon(Icons.add_circle, color: Colors.green),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    "Total: R\$ ${(preco * quantity).toStringAsFixed(2).replaceAll('.', ',')}",
-                    style:
-                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        addToCartWithQuantity(product, quantity);
-                        Navigator.pop(context);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
                         ),
-                      ),
-                      child: const Text(
-                        "Ok",
-                        style: TextStyle(
-                            color: Colors.white, fontWeight: FontWeight.bold),
+                        child: const Text(
+                          "Ok",
+                          style: TextStyle(
+                              color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          );
-        });
+            );
+          },
+        );
       },
     );
   }
@@ -469,21 +523,15 @@ class _ProductListPageState extends State<ProductListPage> {
                     if (state.status == ConsultProductStateStatus.loading) {
                       return const Center(child: CircularProgressIndicator());
                     }
-
                     if (state.status == ConsultProductStateStatus.error) {
                       return Center(
                         child: Text(state.errorMessage ?? 'Erro desconhecido'),
                       );
                     }
-
                     final products = (state.products ?? [])
                         .where((p) =>
-                    p.produto
-                        .toLowerCase()
-                        .contains(searchQuery.toLowerCase()) ||
-                        p.codigo
-                            .toLowerCase()
-                            .contains(searchQuery.toLowerCase()))
+                    p.produto.toLowerCase().contains(searchQuery.toLowerCase()) ||
+                        p.codigo.toLowerCase().contains(searchQuery.toLowerCase()))
                         .toList();
 
                     if (products.isEmpty) {
@@ -492,11 +540,8 @@ class _ProductListPageState extends State<ProductListPage> {
 
                     if (isGrid) {
                       return GridView.builder(
-                        gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          childAspectRatio: 0.75,
-                        ),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2, childAspectRatio: 0.75),
                         itemCount: products.length,
                         itemBuilder: (context, index) {
                           final product = products[index];
@@ -507,8 +552,7 @@ class _ProductListPageState extends State<ProductListPage> {
                               elevation: 3,
                               clipBehavior: Clip.antiAlias,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
+                                  borderRadius: BorderRadius.circular(12)),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -520,11 +564,9 @@ class _ProductListPageState extends State<ProductListPage> {
                                       width: double.infinity,
                                       fit: BoxFit.cover,
                                       errorBuilder: (_, __, ___) =>
-                                          Image.asset(
-                                            'assets/no-image.jpeg',
-                                            fit: BoxFit.cover,
-                                            width: double.infinity,
-                                          ),
+                                          Image.asset('assets/no-image.jpeg',
+                                              fit: BoxFit.cover,
+                                              width: double.infinity),
                                     ),
                                   ),
                                   Padding(
@@ -564,18 +606,14 @@ class _ProductListPageState extends State<ProductListPage> {
                                 width: 50,
                                 height: 50,
                                 fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Image.asset(
-                                  'assets/no-image.jpeg',
-                                  width: 50,
-                                  height: 50,
-                                  fit: BoxFit.cover,
-                                ),
+                                errorBuilder: (_, __, ___) =>
+                                    Image.asset('assets/no-image.jpeg',
+                                        width: 50, height: 50, fit: BoxFit.cover),
                               ),
                             ),
                             title: Text(product.produto),
                             subtitle: Text(
-                              "Código: ${product.codigo} • R\$ ${product.preco} • Estoque: ${product.estoque}",
-                            ),
+                                "Código: ${product.codigo} • R\$ ${product.preco} • Estoque: ${product.estoque}"),
                           ),
                         );
                       },
@@ -621,10 +659,9 @@ class _ProductListPageState extends State<ProductListPage> {
                   child: Text(
                     '$totalItems',
                     style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12),
                   ),
                 ),
               ),

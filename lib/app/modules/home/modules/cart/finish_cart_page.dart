@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/ui/helpers/messages.dart';
 import '../../../../repositories/customer/model/customer_model.dart';
@@ -48,59 +49,63 @@ class _FinishCartPageState extends State<FinishCartPage>
     ]);
 
     final cliente = cubit.clientesLista.firstWhere(
-          (c) => c.codigo == pedido.idCliente,
-      orElse: () => CustomerModel(
-        codigo: '',
-        cliente: '',
-        endereco: '',
-        bairro: '',
-        cidade: '',
-        uf: '',
-        restricao: '',
-        limiteCredito: '',
-      ),
+      (c) => c.codigo == pedido.idCliente,
+      orElse:
+          () => CustomerModel(
+            codigo: '',
+            cliente: '',
+            endereco: '',
+            bairro: '',
+            cidade: '',
+            uf: '',
+            restricao: '',
+            limiteCredito: '',
+          ),
     );
     cubit.setCliente(cliente);
 
     final tipo = cubit.tiposPagamento.firstWhere(
-          (t) => t.codigo == pedido.idTpPag,
+      (t) => t.codigo == pedido.idTpPag,
       orElse: () => TipoPagamentoModel(codigo: '', descricao: ''),
     );
     cubit.setTipoPagamento(tipo);
 
     final cond = cubit.condicoesPagamento.firstWhere(
-          (c) => c.codigo == pedido.idCondPag,
+      (c) => c.codigo == pedido.idCondPag,
       orElse: () => CondicaoPagamentoModel(codigo: '', descricao: ''),
     );
     cubit.setCondicaoPagamento(cond);
 
     List<ConsultProductModel> produtosReconstruidos = [];
     if (cubit.produtosLista.isNotEmpty) {
-      produtosReconstruidos = pedido.produtos.map((p) {
-        final local = cubit.produtosLista.firstWhere(
+      produtosReconstruidos =
+          pedido.produtos.map((p) {
+            final local = cubit.produtosLista.firstWhere(
               (prod) => prod.codigo == p.idProduto,
-          orElse: () => ConsultProductModel(
-            codigo: p.idProduto,
-            produto: 'Produto #${p.idProduto}',
-            preco: p.preco,
-            estoque: '0',
-            imagem: '',
-            quantidade: p.quantidade,
-          ),
-        );
-        return local.copyWith(quantidade: p.quantidade);
-      }).toList();
+              orElse:
+                  () => ConsultProductModel(
+                    codigo: p.idProduto,
+                    produto: 'Produto #${p.idProduto}',
+                    preco: p.preco,
+                    estoque: '0',
+                    imagem: '',
+                    quantidade: p.quantidade,
+                  ),
+            );
+            return local.copyWith(quantidade: p.quantidade);
+          }).toList();
     } else {
-      produtosReconstruidos = pedido.produtos.map((p) {
-        return ConsultProductModel(
-          codigo: p.idProduto,
-          produto: 'Produto #${p.idProduto}',
-          preco: p.preco,
-          estoque: '0',
-          imagem: '',
-          quantidade: p.quantidade,
-        );
-      }).toList();
+      produtosReconstruidos =
+          pedido.produtos.map((p) {
+            return ConsultProductModel(
+              codigo: p.idProduto,
+              produto: 'Produto #${p.idProduto}',
+              preco: p.preco,
+              estoque: '0',
+              imagem: '',
+              quantidade: p.quantidade,
+            );
+          }).toList();
     }
 
     cubit.setProdutos(produtosReconstruidos);
@@ -155,12 +160,14 @@ class _FinishCartPageState extends State<FinishCartPage>
             listener: (context, state) {
               state.status.matchAny(
                 success: () {
-                  showSuccess(state.successMessage ?? "Pedido salvo com sucesso!");
+                  showSuccess(
+                    state.successMessage ?? "Pedido salvo com sucesso!",
+                  );
                   cubit.resetarCampos();
                   _descontoController.clear();
                   _observacaoController.clear();
                   LocalOrdersPage.updateNotifier.value =
-                  !LocalOrdersPage.updateNotifier.value;
+                      !LocalOrdersPage.updateNotifier.value;
                   Navigator.pop(context);
                 },
                 error: () {
@@ -201,7 +208,9 @@ class _FinishCartPageState extends State<FinishCartPage>
                     const SizedBox(height: 10),
                     TextField(
                       controller: _observacaoController,
-                      decoration: const InputDecoration(labelText: "Observações"),
+                      decoration: const InputDecoration(
+                        labelText: "Observações",
+                      ),
                       onChanged: cubit.setObservacao,
                     ),
                     const SizedBox(height: 20),
@@ -211,17 +220,19 @@ class _FinishCartPageState extends State<FinishCartPage>
                         const Text(
                           "Produtos",
                           style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         ElevatedButton(
                           onPressed: () async {
                             final result =
-                            await Navigator.push<List<ConsultProductModel>>(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const ProductListPage(),
-                              ),
-                            );
+                                await Navigator.push<List<ConsultProductModel>>(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const ProductListPage(),
+                                  ),
+                                );
                             if (result != null) {
                               cubit.setProdutos(result);
                             }
@@ -229,7 +240,7 @@ class _FinishCartPageState extends State<FinishCartPage>
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.lightBlue[50],
                             foregroundColor:
-                            Theme.of(context).colorScheme.primary,
+                                Theme.of(context).colorScheme.primary,
                           ),
                           child: const Text("+ Adicionar"),
                         ),
@@ -239,39 +250,41 @@ class _FinishCartPageState extends State<FinishCartPage>
                     state.produtos.isEmpty
                         ? const Text("Nenhum produto adicionado.")
                         : SizedBox(
-                      height: 250,
-                      child: ListView.builder(
-                        itemCount: state.produtos.length,
-                        itemBuilder: (_, index) {
-                          final p = state.produtos[index];
-                          return Card(
-                            color: Colors.lightBlue[50],
-                            child: ListTile(
-                              title: Text(p.produto),
-                              subtitle: Text(
-                                "Qtd: ${p.quantidade} • Preço: R\$ ${p.preco.replaceAll(',', '.')}",
-                              ),
-                              trailing: IconButton(
-                                icon: const Icon(Icons.delete,
-                                    color: Colors.red),
-                                onPressed: () {
-                                  setState(() {
-                                    cubit.state.produtos.removeAt(index);
-                                  });
-                                  cubit.setProdutos(
-                                      List.from(cubit.state.produtos));
-                                },
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
+                          height: 250,
+                          child: ListView.builder(
+                            itemCount: state.produtos.length,
+                            itemBuilder: (_, index) {
+                              final p = state.produtos[index];
+                              return Card(
+                                color: Colors.lightBlue[50],
+                                child: ListTile(
+                                  title: Text(p.produto),
+                                  subtitle: Text(
+                                    "Qtd: ${p.quantidade} • Preço: R\$ ${p.preco.replaceAll(',', '.')}",
+                                  ),
+                                  trailing: IconButton(
+                                    icon: const Icon(
+                                      Icons.delete,
+                                      color: Colors.red,
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        cubit.state.produtos.removeAt(index);
+                                      });
+                                      cubit.setProdutos(
+                                        List.from(cubit.state.produtos),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
                     const SizedBox(height: 20),
                     GestureDetector(
                       onTap: () async {
-                        final condicoes =
-                        await cubit.fetchCondicoesPagamento();
+                        final condicoes = await cubit.fetchCondicoesPagamento();
                         if (!mounted) return;
                         _showSearch<CondicaoPagamentoModel>(
                           context: context,
@@ -283,9 +296,11 @@ class _FinishCartPageState extends State<FinishCartPage>
                       },
                       child: InputDecorator(
                         decoration: const InputDecoration(
-                            labelText: "Condição de Pagamento"),
-                        child: Text(state.condicaoPagamento?.descricao ??
-                            "Selecionar"),
+                          labelText: "Condição de Pagamento",
+                        ),
+                        child: Text(
+                          state.condicaoPagamento?.descricao ?? "Selecionar",
+                        ),
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -303,17 +318,28 @@ class _FinishCartPageState extends State<FinishCartPage>
                       },
                       child: InputDecorator(
                         decoration: const InputDecoration(
-                            labelText: "Tipo de Pagamento"),
+                          labelText: "Tipo de Pagamento",
+                        ),
                         child: Text(
-                            state.tipoPagamento?.descricao ?? "Selecionar"),
+                          state.tipoPagamento?.descricao ?? "Selecionar",
+                        ),
                       ),
                     ),
                     const SizedBox(height: 20),
                     TextField(
                       controller: _descontoController,
-                      keyboardType: TextInputType.number,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(
+                          RegExp(r'^\d*\,?\d{0,2}'),
+                        ),
+                      ],
                       decoration: const InputDecoration(
-                          labelText: "Desconto", prefixText: "R\$ "),
+                        labelText: "Desconto",
+                        prefixText: "R\$ ",
+                      ),
                       onTap: () {
                         _descontoController.selection = TextSelection(
                           baseOffset: 0,
@@ -322,6 +348,7 @@ class _FinishCartPageState extends State<FinishCartPage>
                       },
                       onChanged: (_) => setState(() {}),
                     ),
+
                     const SizedBox(height: 20),
                     Card(
                       color: Colors.lightBlue[50],
@@ -332,13 +359,16 @@ class _FinishCartPageState extends State<FinishCartPage>
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text("Total Pedido",
-                                style:
-                                TextStyle(fontWeight: FontWeight.bold)),
+                            const Text(
+                              "Total Pedido",
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
                             Text(
                               "R\$ ${totalComDesconto.toStringAsFixed(2)}",
                               style: const TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize: 18),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
                             ),
                           ],
                         ),
@@ -351,18 +381,25 @@ class _FinishCartPageState extends State<FinishCartPage>
                             onPressed: () async {
                               if (!validateFields(state)) return;
 
-                              final desconto = double.tryParse(
-                                  _descontoController.text
-                                      .replaceAll(',', '.')) ??
+                              final desconto =
+                                  double.tryParse(
+                                    _descontoController.text.replaceAll(
+                                      ',',
+                                      '.',
+                                    ),
+                                  ) ??
                                   0.0;
 
                               try {
-                                final pedido =
-                                await cubit.montarPedidoComDesconto(desconto);
+                                final pedido = await cubit
+                                    .montarPedidoComDesconto(desconto);
 
                                 final pedidoFinal = pedido.copyWith(
-                                  valDesc: desconto.toStringAsFixed(2).replaceAll('.', ','),
-                                  numPed: cubit.state.pedidoEmEdicao?.numPed ??
+                                  valDesc: desconto
+                                      .toStringAsFixed(2)
+                                      .replaceAll('.', ','),
+                                  numPed:
+                                      cubit.state.pedidoEmEdicao?.numPed ??
                                       pedido.numPed,
                                 );
 
@@ -421,53 +458,61 @@ class _FinishCartPageState extends State<FinishCartPage>
 
     await showDialog(
       context: context,
-      builder: (_) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: Text(title),
-          content: SizedBox(
-            width: double.maxFinite,
-            height: 400,
-            child: Column(
-              children: [
-                TextField(
-                  controller: searchController,
-                  decoration: const InputDecoration(
-                    labelText: 'Pesquisar',
-                    prefixIcon: Icon(Icons.search),
+      builder:
+          (_) => StatefulBuilder(
+            builder:
+                (context, setDialogState) => AlertDialog(
+                  title: Text(title),
+                  content: SizedBox(
+                    width: double.maxFinite,
+                    height: 400,
+                    child: Column(
+                      children: [
+                        TextField(
+                          controller: searchController,
+                          decoration: const InputDecoration(
+                            labelText: 'Pesquisar',
+                            prefixIcon: Icon(Icons.search),
+                          ),
+                          onChanged: (value) {
+                            setDialogState(() {
+                              filtered =
+                                  items
+                                      .where(
+                                        (e) => display(e)
+                                            .toLowerCase()
+                                            .contains(value.toLowerCase()),
+                                      )
+                                      .toList();
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 10),
+                        Expanded(
+                          child:
+                              filtered.isEmpty
+                                  ? const Center(
+                                    child: Text("Nenhum item encontrado"),
+                                  )
+                                  : ListView.builder(
+                                    itemCount: filtered.length,
+                                    itemBuilder: (_, index) {
+                                      final item = filtered[index];
+                                      return ListTile(
+                                        title: Text(display(item)),
+                                        onTap: () {
+                                          onSelected(item);
+                                          Navigator.pop(context);
+                                        },
+                                      );
+                                    },
+                                  ),
+                        ),
+                      ],
+                    ),
                   ),
-                  onChanged: (value) {
-                    setDialogState(() {
-                      filtered = items
-                          .where((e) => display(e)
-                          .toLowerCase()
-                          .contains(value.toLowerCase()))
-                          .toList();
-                    });
-                  },
                 ),
-                const SizedBox(height: 10),
-                Expanded(
-                  child: filtered.isEmpty
-                      ? const Center(child: Text("Nenhum item encontrado"))
-                      : ListView.builder(
-                    itemCount: filtered.length,
-                    itemBuilder: (_, index) {
-                      final item = filtered[index];
-                      return ListTile(
-                        title: Text(display(item)),
-                        onTap: () {
-                          onSelected(item);
-                          Navigator.pop(context);
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
           ),
-        ),
-      ),
     );
   }
 }
