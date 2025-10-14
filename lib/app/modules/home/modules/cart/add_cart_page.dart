@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:ecommerce/app/modules/home/modules/cart/finish_cart_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/services.dart';
+import '../../../../core/event/table_price_event.dart';
 import '../../../../repositories/product/model/consult_product_model.dart';
+import '../../../../repositories/product/model/consult_price_model.dart';
 import '../../../profile/modules/consultProduct/cubit/consult_product_bloc_cubit.dart';
 import '../../../profile/modules/consultProduct/cubit/consult_product_bloc_state.dart';
 import 'cubit/finishCard/finish_bloc_cubit.dart';
@@ -26,14 +30,30 @@ class _ProductListPageState extends State<ProductListPage> {
   bool isGrid = false;
   List<CartItem> cart = [];
   final GlobalKey _cartButtonKey = GlobalKey();
+  late final StreamSubscription<int> _tabelaSub;
 
   @override
   void initState() {
     super.initState();
+
     final cubit = context.read<FinishCartCubit>();
     cart = cubit.state.produtos
         .map((p) => CartItem(product: p, quantity: p.quantidade))
         .toList();
+
+    _tabelaSub = TabelaPrecoEvent.stream.listen((novaTabela) {
+      if (mounted) {
+        context.read<ConsultProductBlocCubit>().fetchProducts(novaTabela);
+      }
+    });
+
+    context.read<ConsultProductBlocCubit>().fetchProducts();
+  }
+
+  @override
+  void dispose() {
+    _tabelaSub.cancel();
+    super.dispose();
   }
 
   void addToCart(ConsultProductModel product) {
@@ -70,7 +90,7 @@ class _ProductListPageState extends State<ProductListPage> {
     }
   }
 
-  int get totalItems => cart.length;
+  int get totalItems => cart.fold(0, (sum, item) => sum + item.quantity);
 
   double get totalPrice => cart.fold(0.0, (sum, item) {
     final price =
@@ -149,7 +169,6 @@ class _ProductListPageState extends State<ProductListPage> {
 
   void _openCartModal() async {
     final cubit = context.read<FinishCartCubit>();
-
     final selectedProducts =
     await showModalBottomSheet<List<ConsultProductModel>>(
       context: context,
@@ -237,6 +256,8 @@ class _ProductListPageState extends State<ProductListPage> {
                               ),
                             ],
                           ),
+                          onTap: () => _showPriceInfoDialog(
+                              context, item.product),
                         );
                       },
                     ),
@@ -319,14 +340,28 @@ class _ProductListPageState extends State<ProductListPage> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
+                        GestureDetector(
+                          onTap: () => _showPriceInfoDialog(context, product),
+                          child: Container(
+                            width: 30,
+                            height: 30,
+                            decoration: const BoxDecoration(
+                              color: Colors.grey,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.info,
+                                color: Colors.white, size: 22),
+                          ),
+                        ),
                         IconButton(
                           icon: const Icon(Icons.close),
                           onPressed: () => Navigator.pop(context),
                         ),
                       ],
                     ),
+                    const SizedBox(height: 10),
                     Image.network(
                       product.imagem,
                       height: 150,
@@ -349,7 +384,6 @@ class _ProductListPageState extends State<ProductListPage> {
                       style: const TextStyle(fontSize: 14),
                     ),
                     const SizedBox(height: 20),
-
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -362,8 +396,8 @@ class _ProductListPageState extends State<ProductListPage> {
                           child: TextField(
                             controller: precoController,
                             textAlign: TextAlign.center,
-                            keyboardType:
-                            const TextInputType.numberWithOptions(decimal: true),
+                            keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true),
                             inputFormatters: [
                               FilteringTextInputFormatter.allow(
                                   RegExp(r'^\d*[,\.]?\d{0,2}')),
@@ -376,14 +410,15 @@ class _ProductListPageState extends State<ProductListPage> {
                             },
                             onChanged: (value) {
                               setStateModal(() {
-                                preco = double.tryParse(value.replaceAll(',', '.')) ?? preco;
+                                preco =
+                                    double.tryParse(value.replaceAll(',', '.')) ??
+                                        preco;
                               });
                             },
                           ),
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -434,7 +469,6 @@ class _ProductListPageState extends State<ProductListPage> {
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 10),
                     Text(
                       "Total: R\$ ${(preco * quantity).toStringAsFixed(2).replaceAll('.', ',')}",
@@ -472,6 +506,34 @@ class _ProductListPageState extends State<ProductListPage> {
           },
         );
       },
+    );
+  }
+
+  void _showPriceInfoDialog(BuildContext context, ConsultProductModel product) async {
+    final bloc = context.read<ConsultProductBlocCubit>();
+    final price = await bloc.repository.getProductPrices(product.codigo);
+
+    if (price == null) return;
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text("Preços do produto"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text("À vista: R\$ ${price.precoAvista}"),
+            Text("Promoção: R\$ ${price.precoPromo}"),
+            Text("Faturado: R\$ ${price.precoFaturado}"),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Fechar"),
+          ),
+        ],
+      ),
     );
   }
 
@@ -518,7 +580,8 @@ class _ProductListPageState extends State<ProductListPage> {
                 ),
               ),
               Expanded(
-                child: BlocBuilder<ConsultProductBlocCubit, ConsultProductBlocState>(
+                child: BlocBuilder<ConsultProductBlocCubit,
+                    ConsultProductBlocState>(
                   builder: (context, state) {
                     if (state.status == ConsultProductStateStatus.loading) {
                       return const Center(child: CircularProgressIndicator());
@@ -528,6 +591,7 @@ class _ProductListPageState extends State<ProductListPage> {
                         child: Text(state.errorMessage ?? 'Erro desconhecido'),
                       );
                     }
+
                     final products = (state.products ?? [])
                         .where((p) =>
                     p.produto.toLowerCase().contains(searchQuery.toLowerCase()) ||
@@ -540,7 +604,8 @@ class _ProductListPageState extends State<ProductListPage> {
 
                     if (isGrid) {
                       return GridView.builder(
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 2, childAspectRatio: 0.75),
                         itemCount: products.length,
                         itemBuilder: (context, index) {

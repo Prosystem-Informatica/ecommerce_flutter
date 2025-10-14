@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/event/table_price_event.dart';
 import '../../../../repositories/product/model/consult_product_model.dart';
 import 'cubit/consult_product_bloc_cubit.dart';
 import 'cubit/consult_product_bloc_state.dart';
@@ -15,6 +18,19 @@ class _ConsultProductPageState extends State<ConsultProductPage> {
   final TextEditingController searchController = TextEditingController();
   String searchQuery = '';
   bool isGridView = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    TabelaPrecoEvent.stream.listen((novaTabela) {
+      if (mounted) {
+        context.read<ConsultProductBlocCubit>().fetchProducts(novaTabela);
+      }
+    });
+
+    context.read<ConsultProductBlocCubit>().fetchProducts();
+  }
 
   @override
   Widget build(BuildContext context) {
