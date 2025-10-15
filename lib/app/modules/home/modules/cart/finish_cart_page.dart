@@ -92,7 +92,10 @@ class _FinishCartPageState extends State<FinishCartPage>
                     quantidade: p.quantidade,
                   ),
             );
-            return local.copyWith(quantidade: p.quantidade);
+            return local.copyWith(
+              quantidade: p.quantidade,
+              preco: p.preco,
+            );
           }).toList();
     } else {
       produtosReconstruidos =
