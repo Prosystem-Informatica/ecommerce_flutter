@@ -1,33 +1,54 @@
+import 'dart:convert';
+import 'dart:developer';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'i_finish_card_repository.dart';
 import 'model/cart_model.dart';
 import 'model/cart_order_model.dart';
 
-class FinishCartRepository {
-  final String baseUrl =
-      "http://prosystem04.dyndns-work.com/datasnap/rest/TServerAPPecf";
+class FinishCartRepository implements IFinishCartRepository {
+  late String baseUrl;
 
+  FinishCartRepository();
+
+  /// Carrega host e porta do SharedPreferences
+  Future<void> loadHostFromPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    final host = prefs.getString('host');
+    final port = prefs.getString('port');
+
+    if (host == null || port == null) {
+      throw Exception(
+          "Host ou porta não encontrados no SharedPreferences. Faça login primeiro.");
+    }
+
+    baseUrl = 'http://$host:$port/datasnap/rest/TServerAPPecf';
+    log("[FinishCartRepository] Host carregado do SharedPreferences: $baseUrl");
+  }
+
+  @override
   Future<String> incluirPedido() async {
+    if (baseUrl.isEmpty) await loadHostFromPrefs();
     final url = Uri.parse("$baseUrl/IncluirPedido");
-    print(">>> IncluirPedido URL: $url");
+    log("IncluirPedido URL: $url");
 
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
       final numPed = response.body.replaceAll('"', '');
-      print("<<< IncluirPedido Response: $numPed");
+      log("IncluirPedido Response: $numPed");
       return numPed;
     } else {
       throw Exception("Erro IncluirPedido: ${response.statusCode}");
     }
   }
 
+  @override
   Future<void> gravaPed1(CartModel pedido, String numPed) async {
+    if (baseUrl.isEmpty) await loadHostFromPrefs();
+
     final descontoStr = pedido.valDesc.isEmpty ? "0" : pedido.valDesc;
-
-    final obs = pedido.obsPed.isEmpty
-        ? "-"
-        : Uri.encodeComponent(pedido.obsPed);
-
+    final obs = pedido.obsPed.isEmpty ? "-" : Uri.encodeComponent(pedido.obsPed);
     final total = pedido.totalPed.isEmpty ? "0,00" : pedido.totalPed;
 
     final url = Uri.parse(
@@ -36,37 +57,41 @@ class FinishCartRepository {
           "${pedido.idTpPag}/${pedido.idCondPag}/$descontoStr/$obs/$total",
     );
 
-    print(">>> GravaPed1 URL: $url");
+    log("GravaPed1 URL: $url");
 
     final response = await http.get(url);
 
-    print("<<< GravaPed1 Status: ${response.statusCode}");
-    print("<<< GravaPed1 Body: ${response.body}");
+    log("GravaPed1 Status: ${response.statusCode}");
+    log("GravaPed1 Body: ${response.body}");
 
     if (response.statusCode != 200) {
       throw Exception("Erro GravaPed1: ${response.statusCode}");
     }
   }
 
+  @override
   Future<void> gravaPed2(String numPed, CartOrderModel produto) async {
+    if (baseUrl.isEmpty) await loadHostFromPrefs();
+
     final precoStr = produto.preco.isEmpty ? "0,00" : produto.preco;
 
     final url = Uri.parse(
       "$baseUrl/GravaPed2/$numPed/${produto.idProduto}/${produto.quantidade}/$precoStr",
     );
 
-    print(">>> GravaPed2 URL: $url");
+    log("GravaPed2 URL: $url");
 
     final response = await http.get(url);
 
-    print("<<< GravaPed2 Status: ${response.statusCode}");
-    print("<<< GravaPed2 Body: ${response.body}");
+    log("GravaPed2 Status: ${response.statusCode}");
+    log("GravaPed2 Body: ${response.body}");
 
     if (response.statusCode != 200) {
       throw Exception("Erro GravaPed2: ${response.statusCode}");
     }
   }
 
+  @override
   Future<bool> enviarPedido(CartModel pedido) async {
     try {
       final numPed = await incluirPedido();
@@ -78,22 +103,22 @@ class FinishCartRepository {
       }
 
       final urlConfirma = Uri.parse("$baseUrl/ConfirmaPed/$numPed");
-      print(">>> ConfirmaPed URL: $urlConfirma");
+      log("ConfirmaPed URL: $urlConfirma");
 
       final response = await http.get(urlConfirma);
 
-      print("<<< ConfirmaPed Status: ${response.statusCode}");
-      print("<<< ConfirmaPed Body: ${response.body}");
+      log("ConfirmaPed Status: ${response.statusCode}");
+      log("ConfirmaPed Body: ${response.body}");
 
       if (response.statusCode == 200) {
         final confirmado = response.body.replaceAll('"', '').toUpperCase();
-        print("<<< ConfirmaPed Response: $confirmado");
+        log("ConfirmaPed Response: $confirmado");
         return confirmado == 'T';
       } else {
         throw Exception("Erro ConfirmaPed: ${response.statusCode}");
       }
     } catch (e) {
-      print("Erro ao enviar pedido: $e");
+      log("Erro ao enviar pedido: $e");
       return false;
     }
   }
