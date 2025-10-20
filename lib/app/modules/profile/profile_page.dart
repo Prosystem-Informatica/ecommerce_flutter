@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../../core/event/table_price_event.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -16,7 +15,6 @@ class _ProfilePageState extends State<ProfilePage> {
   String nome = "Nome pendente";
   String email = "Email pendente";
   String? imagem64;
-
   int tabelaSelecionada = 2;
 
   @override
@@ -38,11 +36,28 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _changeTabela(int selected) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('tabelaPreco', selected);
-
     setState(() => tabelaSelecionada = selected);
 
-
     TabelaPrecoEvent.change(selected);
+  }
+
+  Future<void> _logout() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    await prefs.remove('userLogin');
+    await prefs.remove('userCodigo');
+    await prefs.remove('companyCodigo');
+    await prefs.remove('userFantasia');
+    await prefs.remove('userEmail');
+    await prefs.remove('userImagem64');
+    await prefs.remove('host');
+    await prefs.remove('port');
+    await prefs.remove('tabelaPreco');
+
+    await prefs.reload();
+
+
+    Get.offAllNamed("/login");
   }
 
   @override
@@ -64,7 +79,8 @@ class _ProfilePageState extends State<ProfilePage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                padding:
+                const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
                 color: Colors.transparent,
                 child: Row(
                   children: [
@@ -115,27 +131,32 @@ class _ProfilePageState extends State<ProfilePage> {
                 child: ListView(
                   children: [
                     ListTile(
-                      leading: Icon(Icons.content_paste_search, color: colorScheme.primary),
+                      leading: Icon(Icons.content_paste_search,
+                          color: colorScheme.primary),
                       title: const Text("Consultar Produtos"),
                       onTap: () => Get.toNamed("/ConsultProduct"),
                     ),
                     ListTile(
-                      leading: Icon(Icons.attach_money, color: colorScheme.primary),
+                      leading: Icon(Icons.attach_money,
+                          color: colorScheme.primary),
                       title: const Text("Comissão"),
                       onTap: () => Get.toNamed("/Commission"),
                     ),
                     ListTile(
-                      leading: Icon(Icons.person_search_rounded, color: colorScheme.primary),
+                      leading: Icon(Icons.person_search_rounded,
+                          color: colorScheme.primary),
                       title: const Text("Clientes"),
                       onTap: () => Get.toNamed("/customer"),
                     ),
                     ListTile(
-                      leading: Icon(Icons.star_rate, color: colorScheme.primary),
+                      leading:
+                      Icon(Icons.star_rate, color: colorScheme.primary),
                       title: const Text("Avaliar App"),
                       onTap: () {},
                     ),
                     ListTile(
-                      leading: Icon(Icons.shopping_bag_outlined, color: colorScheme.primary),
+                      leading: Icon(Icons.shopping_bag_outlined,
+                          color: colorScheme.primary),
                       title: const Text("Tabela de Preço"),
                       subtitle: Text(
                         tabelaSelecionada == 1
@@ -149,7 +170,8 @@ class _ProfilePageState extends State<ProfilePage> {
                         final selected = await showDialog<int>(
                           context: context,
                           builder: (context) => AlertDialog(
-                            title: const Text("Selecione a Tabela de Preço"),
+                            title:
+                            const Text("Selecione a Tabela de Preço"),
                             content: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
@@ -177,13 +199,10 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                     const Divider(),
                     ListTile(
-                      leading: Icon(Icons.exit_to_app, color: colorScheme.primary),
+                      leading:
+                      Icon(Icons.exit_to_app, color: colorScheme.primary),
                       title: const Text("Sair"),
-                      onTap: () async {
-                        final prefs = await SharedPreferences.getInstance();
-                        await prefs.clear();
-                        Get.offAllNamed("/login");
-                      },
+                      onTap: _logout,
                     ),
                   ],
                 ),

@@ -13,7 +13,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'app_widget.dart';
 import 'core/helpers/environments.dart';
 import 'core/rest/http/http_rest_client.dart';
-import 'core/rest/rest_client.dart';
 import 'modules/home/modules/cart/cubit/finishCard/finish_bloc_cubit.dart';
 import 'modules/login/cubit/login_bloc_cubit.dart';
 import 'modules/profile/modules/commission/cubit/commission_bloc_cubit.dart';

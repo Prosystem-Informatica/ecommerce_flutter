@@ -6,7 +6,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/event/table_price_event.dart';
 import '../../../../repositories/product/model/consult_product_model.dart';
-import '../../../../repositories/product/model/consult_price_model.dart';
 import '../../../profile/modules/consultProduct/cubit/consult_product_bloc_cubit.dart';
 import '../../../profile/modules/consultProduct/cubit/consult_product_bloc_state.dart';
 import 'cubit/finishCard/finish_bloc_cubit.dart';

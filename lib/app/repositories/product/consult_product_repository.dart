@@ -13,20 +13,19 @@ class ConsultProductRepository implements IConsultProductRepository {
 
   ConsultProductRepository();
 
-  Future<void> configureBaseUrl() async {
+  Future<void> reloadBaseUrl() async {
     final prefs = await SharedPreferences.getInstance();
     final host = prefs.getString('host') ?? '';
     final port = prefs.getString('port') ?? '';
 
     baseUrl = 'http://$host:$port/datasnap/rest/TServerAPPecf';
     imageBaseUrl = 'http://$host/Fotos';
+
   }
 
   @override
   Future<List<ConsultProductModel>> getProducts([int? tabela]) async {
-    if (baseUrl.isEmpty) {
-      await configureBaseUrl();
-    }
+    await reloadBaseUrl();
 
     final prefs = await SharedPreferences.getInstance();
     final tabelaSelecionada = tabela ?? prefs.getInt('tabelaPreco') ?? 2;
@@ -55,16 +54,14 @@ class ConsultProductRepository implements IConsultProductRepository {
       } else {
         return await dao.getProducts();
       }
-    } catch (e) {
+    } catch (e, s) {
       return await dao.getProducts();
     }
   }
 
   @override
   Future<ConsultPriceModel?> getProductPrices(String codigo) async {
-    if (baseUrl.isEmpty) {
-      await configureBaseUrl();
-    }
+    await reloadBaseUrl();
 
     final url = Uri.parse('$baseUrl/ConsultaProduto/$codigo');
 
@@ -79,7 +76,7 @@ class ConsultProductRepository implements IConsultProductRepository {
       }
 
       return null;
-    } catch (e) {
+    } catch (e, s) {
       return null;
     }
   }

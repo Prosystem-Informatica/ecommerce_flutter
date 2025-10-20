@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:developer';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -22,7 +21,16 @@ class FinishCartRepository implements IFinishCartRepository {
     }
 
     baseUrl = 'http://$host:$port/datasnap/rest/TServerAPPecf';
-    log("[FinishCartRepository] Host carregado do SharedPreferences: $baseUrl");
+  }
+
+  Future<void> reloadBaseUrl() async {
+    try {
+      await loadHostFromPrefs();
+      log("✅ Base URL recarregada: $baseUrl");
+    } catch (e) {
+      log("⚠️ Erro ao recarregar baseUrl: $e");
+      rethrow;
+    }
   }
 
   @override
@@ -93,8 +101,9 @@ class FinishCartRepository implements IFinishCartRepository {
   @override
   Future<bool> enviarPedido(CartModel pedido) async {
     try {
-      final numPed = await incluirPedido();
+      await reloadBaseUrl();
 
+      final numPed = await incluirPedido();
       await gravaPed1(pedido, numPed);
 
       for (final item in pedido.produtos) {

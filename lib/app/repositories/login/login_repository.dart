@@ -17,12 +17,15 @@ class LoginRepository implements ILoginRepository {
     try {
       prefs = await SharedPreferences.getInstance();
 
+      await prefs.remove('host');
+      await prefs.remove('port');
+
       final url =
           'http://prosystem.dyndns-work.com:9090/datasnap/rest/TserverAPPnfe/LoginEmpresa/$cnpj';
       final response = await http.get(Uri.parse(url));
       final jsonData = jsonDecode(response.body);
 
-      log("Rona Json > $jsonData");
+      log("Rota Json > $jsonData");
 
       if (jsonData.isNotEmpty) {
         final host = jsonData[0]['SERVIDOR'].toString().toLowerCase();
@@ -32,9 +35,10 @@ class LoginRepository implements ILoginRepository {
         await prefs.setString('port', port);
 
         await _restClient.setBaseUrl(host, port);
+
+      } else {
       }
     } catch (e) {
-      log("Erro checkUrl: $e");
       rethrow;
     }
   }
@@ -46,6 +50,10 @@ class LoginRepository implements ILoginRepository {
 
       login = login.toUpperCase();
       password = password.toUpperCase();
+
+      final host = prefs.getString('host');
+      final port = prefs.getString('port');
+
 
       final path = '/datasnap/rest/TServerAPPecf/LoginApp/$login/$password';
       final response = await _restClient.get(path);
@@ -76,13 +84,13 @@ class LoginRepository implements ILoginRepository {
 
       return res;
     } catch (e) {
-      log("Erro login: $e");
       return LoginModel();
     }
   }
 
   Future<void> logout() async {
     prefs = await SharedPreferences.getInstance();
+
     await prefs.remove('userLogin');
     await prefs.remove('userCodigo');
     await prefs.remove('companyCodigo');

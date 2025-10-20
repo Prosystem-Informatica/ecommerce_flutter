@@ -29,6 +29,21 @@ class HttpRestClient implements RestClient {
     return null;
   }
 
+  Future<void> reloadBaseUrl() async {
+    final saved = await getSavedBaseUrl();
+    if (saved == null) {
+      _baseUrl = null;
+    } else {
+      _baseUrl = saved;
+    }
+  }
+
+  static Future<void> clearSavedBaseUrl() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('host');
+    await prefs.remove('port');
+  }
+
   @override
   RestClient auth() {
     defaultHeaders['authorization'] = 'token';
@@ -47,14 +62,12 @@ class HttpRestClient implements RestClient {
         Map<String, dynamic>? queryParameters,
         Map<String, String>? headers,
       }) async {
-    if (_baseUrl == null) {
-      final saved = await getSavedBaseUrl();
-      if (saved == null) throw Exception('BaseUrl não definido');
-      _baseUrl = saved;
-    }
+    await reloadBaseUrl();
+
+    if (_baseUrl == null) throw Exception('BaseUrl não definido');
 
     final uri = Uri.http(_baseUrl!, path, queryParameters);
-    log("GET API > $uri");
+
     final response = await rest.get(uri, headers: joinHeaders(headers));
     return RestClientResponse.fromHttp(response);
   }
@@ -66,15 +79,14 @@ class HttpRestClient implements RestClient {
         Map<String, dynamic>? queryParameters,
         Map<String, String>? headers,
       }) async {
-    if (_baseUrl == null) {
-      final saved = await getSavedBaseUrl();
-      if (saved == null) throw Exception('BaseUrl não definido');
-      _baseUrl = saved;
-    }
+    await reloadBaseUrl();
+
+    if (_baseUrl == null) throw Exception('BaseUrl não definido');
 
     final uri = Uri.http(_baseUrl!, path, queryParameters);
-    log("POST API > $uri");
-    final response = await rest.post(uri, body: data, headers: joinHeaders(headers));
+
+    final response =
+    await rest.post(uri, body: data, headers: joinHeaders(headers));
     return RestClientResponse.fromHttp(response);
   }
 
@@ -84,3 +96,4 @@ class HttpRestClient implements RestClient {
     return headers;
   }
 }
+
