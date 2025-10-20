@@ -7,12 +7,27 @@ import 'model/consult_product_model.dart';
 import 'model/consult_price_model.dart';
 
 class ConsultProductRepository implements IConsultProductRepository {
-  final String baseUrl = 'http://prosystem04.dyndns-work.com:8080/datasnap/rest/TServerAPPecf';
-  final String imageBaseUrl = 'http://prosystem04.dyndns-work.com/Fotos';
+  String baseUrl = '';
+  String imageBaseUrl = '';
   final dao = ConsultProductDao();
+
+  ConsultProductRepository();
+
+  Future<void> configureBaseUrl() async {
+    final prefs = await SharedPreferences.getInstance();
+    final host = prefs.getString('host') ?? '';
+    final port = prefs.getString('port') ?? '';
+
+    baseUrl = 'http://$host:$port/datasnap/rest/TServerAPPecf';
+    imageBaseUrl = 'http://$host/Fotos';
+  }
 
   @override
   Future<List<ConsultProductModel>> getProducts([int? tabela]) async {
+    if (baseUrl.isEmpty) {
+      await configureBaseUrl();
+    }
+
     final prefs = await SharedPreferences.getInstance();
     final tabelaSelecionada = tabela ?? prefs.getInt('tabelaPreco') ?? 2;
 
@@ -23,8 +38,8 @@ class ConsultProductRepository implements IConsultProductRepository {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
-        final products = data.map((json) {
-          final product = ConsultProductModel.fromJson(json);
+        final products = data.map((jsonItem) {
+          final product = ConsultProductModel.fromJson(jsonItem);
           return ConsultProductModel(
             codigo: product.codigo,
             produto: product.produto,
@@ -47,6 +62,10 @@ class ConsultProductRepository implements IConsultProductRepository {
 
   @override
   Future<ConsultPriceModel?> getProductPrices(String codigo) async {
+    if (baseUrl.isEmpty) {
+      await configureBaseUrl();
+    }
+
     final url = Uri.parse('$baseUrl/ConsultaProduto/$codigo');
 
     try {
@@ -54,7 +73,6 @@ class ConsultProductRepository implements IConsultProductRepository {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
-
         if (data.isNotEmpty) {
           return ConsultPriceModel.fromJson(data.first);
         }
