@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:developer';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'i_finish_card_repository.dart';
+import 'i_finish_cart_repository.dart';
 import 'model/cart_model.dart';
 import 'model/cart_order_model.dart';
 
@@ -11,7 +11,6 @@ class FinishCartRepository implements IFinishCartRepository {
 
   FinishCartRepository();
 
-  /// Carrega host e porta do SharedPreferences
   Future<void> loadHostFromPrefs() async {
     final prefs = await SharedPreferences.getInstance();
     final host = prefs.getString('host');

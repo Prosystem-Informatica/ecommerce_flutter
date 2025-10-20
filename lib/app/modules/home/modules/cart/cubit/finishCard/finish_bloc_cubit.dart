@@ -4,7 +4,7 @@ import '../../../../../../core/database/dao/cart/cart_dao.dart';
 import '../../../../../../core/database/dao/cart/product_dao.dart';
 import '../../../../../../repositories/customer/customer_repository.dart';
 import '../../../../../../repositories/customer/model/customer_model.dart';
-import '../../../../../../repositories/finishCard/finish_card_repository.dart';
+import '../../../../../../repositories/finishCard/finish_cart_repository.dart';
 import '../../../../../../repositories/finishCard/model/cart_model.dart';
 import '../../../../../../repositories/finishCard/model/cart_order_model.dart';
 import '../../../../../../repositories/payment/model/payment_model.dart';

@@ -1,7 +1,7 @@
 import 'package:ecommerce/app/modules/home/modules/cart/cubit/order/order_bloc_cubit.dart';
 import 'package:ecommerce/app/repositories/commission/commission_repository.dart';
 import 'package:ecommerce/app/repositories/customer/customer_repository.dart';
-import 'package:ecommerce/app/repositories/finishCard/finish_card_repository.dart';
+import 'package:ecommerce/app/repositories/finishCard/finish_cart_repository.dart';
 import 'package:ecommerce/app/repositories/login/login_repository.dart';
 import 'package:ecommerce/app/repositories/order/order_repository.dart';
 import 'package:ecommerce/app/repositories/payment/payment_repository.dart';

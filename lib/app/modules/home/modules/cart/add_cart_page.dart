@@ -195,7 +195,7 @@ class _ProductListPageState extends State<ProductListPage> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text(
-                          "Carrinho",
+                          "Resumo Carrinho",
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -230,8 +230,25 @@ class _ProductListPageState extends State<ProductListPage> {
                                 Image.asset('assets/no-image.jpeg'),
                           ),
                           title: Text(item.product.produto),
-                          subtitle: Text(
-                              "Qtd: ${item.quantity} • R\$ ${item.product.preco}"),
+                          subtitle: RichText(
+                            text: TextSpan(
+                              style: const TextStyle(
+                                  fontSize: 12, color: Colors.black87),
+                              children: [
+                                TextSpan(
+                                  text: "Qtd: ${item.quantity} • ",
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold),
+                                ),
+                                TextSpan(
+                                  text:
+                                  "R\$ ${item.product.preco}",
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                          ),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -256,8 +273,8 @@ class _ProductListPageState extends State<ProductListPage> {
                               ),
                             ],
                           ),
-                          onTap: () => _showPriceInfoDialog(
-                              context, item.product),
+                          onTap: () =>
+                              _showPriceInfoDialog(context, item.product),
                         );
                       },
                     ),
@@ -281,13 +298,13 @@ class _ProductListPageState extends State<ProductListPage> {
                         },
                         icon: const Icon(Icons.check),
                         label: const Text(
-                          "Adicionar",
+                          "Concluir",
                           style: TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold),
                         ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
+                          backgroundColor: Theme.of(context).colorScheme.primary,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
@@ -379,9 +396,21 @@ class _ProductListPageState extends State<ProductListPage> {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 5),
-                    Text(
-                      "Código: ${product.codigo}",
-                      style: const TextStyle(fontSize: 14),
+                    RichText(
+                      text: TextSpan(
+                        style: const TextStyle(fontSize: 14, color: Colors.black87),
+                        children: [
+                          TextSpan(
+                              text: "Código: ${product.codigo} • ",
+                              style: const TextStyle(fontWeight: FontWeight.bold)),
+                          TextSpan(
+                              text: "R\$ ${product.preco} • ",
+                              style: const TextStyle(fontWeight: FontWeight.bold)),
+                          TextSpan(
+                              text: "Estoque: ${product.estoque}",
+                              style: const TextStyle(fontWeight: FontWeight.normal)),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 20),
                     Row(
@@ -493,7 +522,7 @@ class _ProductListPageState extends State<ProductListPage> {
                               borderRadius: BorderRadius.circular(12)),
                         ),
                         child: const Text(
-                          "Ok",
+                          "Adicionar ao carrinho",
                           style: TextStyle(
                               color: Colors.white, fontWeight: FontWeight.bold),
                         ),
@@ -518,13 +547,23 @@ class _ProductListPageState extends State<ProductListPage> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text("Preços do produto"),
+        title: const Text("Preços do produto"),
         content: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("À vista: R\$ ${price.precoAvista}"),
-            Text("Promoção: R\$ ${price.precoPromo}"),
-            Text("Faturado: R\$ ${price.precoFaturado}"),
+            Text(
+              "Faturado: R\$ ${price.precoFaturado}",
+              style: const TextStyle(color: Colors.blue),
+            ),
+            Text(
+              "À vista: R\$ ${price.precoAvista}",
+              style: const TextStyle(color: Colors.green),
+            ),
+            Text(
+              "Promoção: R\$ ${price.precoPromo}",
+              style: const TextStyle(color: Colors.red),
+            ),
           ],
         ),
         actions: [
@@ -636,13 +675,28 @@ class _ProductListPageState extends State<ProductListPage> {
                                   ),
                                   Padding(
                                     padding: const EdgeInsets.all(8.0),
-                                    child: Column(
-                                      children: [
-                                        Text(product.produto,
-                                            textAlign: TextAlign.center),
-                                        Text(
-                                            "R\$ ${product.preco} • Estoque: ${product.estoque}"),
-                                      ],
+                                    child: RichText(
+                                      text: TextSpan(
+                                        style: const TextStyle(
+                                            fontSize: 12, color: Colors.black87),
+                                        children: [
+                                          TextSpan(
+                                            text: "Código: ${product.codigo} • ",
+                                            style: const TextStyle(
+                                                fontWeight: FontWeight.bold),
+                                          ),
+                                          TextSpan(
+                                            text: "R\$ ${product.preco} • ",
+                                            style: const TextStyle(
+                                                fontWeight: FontWeight.bold),
+                                          ),
+                                          TextSpan(
+                                            text: "Estoque: ${product.estoque}",
+                                            style: const TextStyle(
+                                                fontWeight: FontWeight.normal),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -677,8 +731,26 @@ class _ProductListPageState extends State<ProductListPage> {
                               ),
                             ),
                             title: Text(product.produto),
-                            subtitle: Text(
-                                "Código: ${product.codigo} • R\$ ${product.preco} • Estoque: ${product.estoque}"),
+                            subtitle: RichText(
+                              text: TextSpan(
+                                style: const TextStyle(
+                                    fontSize: 12, color: Colors.black87),
+                                children: [
+                                  TextSpan(
+                                      text: "Código: ${product.codigo} • ",
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold)),
+                                  TextSpan(
+                                      text: "R\$ ${product.preco} • ",
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold)),
+                                  TextSpan(
+                                      text: "Estoque: ${product.estoque}",
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.normal)),
+                                ],
+                              ),
+                            ),
                           ),
                         );
                       },
@@ -700,7 +772,7 @@ class _ProductListPageState extends State<ProductListPage> {
               key: _cartButtonKey,
               onPressed: _openCartModal,
               icon: const Icon(Icons.shopping_cart),
-              label: const Text("Carrinho"),
+              label: const Text("Resumo Carrinho"),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Theme.of(context).colorScheme.primary,
                 foregroundColor: Colors.white,

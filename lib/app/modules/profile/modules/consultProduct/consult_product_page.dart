@@ -67,18 +67,17 @@ class _ConsultProductPageState extends State<ConsultProductPage> {
                             ),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          suffixIcon:
-                              searchQuery.isNotEmpty
-                                  ? IconButton(
-                                    icon: const Icon(Icons.clear),
-                                    onPressed: () {
-                                      setState(() {
-                                        searchController.clear();
-                                        searchQuery = '';
-                                      });
-                                    },
-                                  )
-                                  : null,
+                          suffixIcon: searchQuery.isNotEmpty
+                              ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              setState(() {
+                                searchController.clear();
+                                searchQuery = '';
+                              });
+                            },
+                          )
+                              : null,
                           fillColor: Colors.white.withOpacity(0.8),
                           filled: true,
                         ),
@@ -104,10 +103,7 @@ class _ConsultProductPageState extends State<ConsultProductPage> {
                 ),
               ),
               Expanded(
-                child: BlocBuilder<
-                  ConsultProductBlocCubit,
-                  ConsultProductBlocState
-                >(
+                child: BlocBuilder<ConsultProductBlocCubit, ConsultProductBlocState>(
                   builder: (context, state) {
                     if (state.status == ConsultProductStateStatus.loading) {
                       return const Center(child: CircularProgressIndicator());
@@ -120,14 +116,14 @@ class _ConsultProductPageState extends State<ConsultProductPage> {
                     }
 
                     final filteredProducts =
-                        (state.products ?? []).where((p) {
-                          return p.produto.toLowerCase().contains(
-                                searchQuery.toLowerCase(),
-                              ) ||
-                              p.codigo.toLowerCase().contains(
-                                searchQuery.toLowerCase(),
-                              );
-                        }).toList();
+                    (state.products ?? []).where((p) {
+                      return p.produto.toLowerCase().contains(
+                        searchQuery.toLowerCase(),
+                      ) ||
+                          p.codigo.toLowerCase().contains(
+                            searchQuery.toLowerCase(),
+                          );
+                    }).toList();
 
                     if (filteredProducts.isEmpty) {
                       return const Center(
@@ -139,12 +135,12 @@ class _ConsultProductPageState extends State<ConsultProductPage> {
                       return GridView.builder(
                         padding: const EdgeInsets.all(12),
                         gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              childAspectRatio: 0.75,
-                              crossAxisSpacing: 12,
-                              mainAxisSpacing: 12,
-                            ),
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          childAspectRatio: 0.75,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                        ),
                         itemCount: filteredProducts.length,
                         itemBuilder: (context, index) {
                           final product = filteredProducts[index];
@@ -184,88 +180,117 @@ class ProductCard extends StatelessWidget {
 
     return isGrid
         ? Card(
-          color: cardColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          elevation: 3,
-          clipBehavior: Clip.antiAlias,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Image.network(
-                  product.imagem.isNotEmpty
-                      ? product.imagem
-                      : 'assets/no-image.jpeg',
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorBuilder:
-                      (_, __, ___) => Image.asset(
-                        'assets/no-image.jpeg',
-                        fit: BoxFit.cover,
-                      ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  product.produto,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    color: Colors.black87,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: Text(
-                  'R\$ ${product.preco} • Estoque: ${product.estoque}',
-                  style: const TextStyle(fontSize: 12, color: Colors.black87),
-                ),
-              ),
-              const SizedBox(height: 6),
-            ],
-          ),
-        )
-        : Card(
-          color: cardColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          elevation: 6,
-          child: ListTile(
-            tileColor: cardColor,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            contentPadding: const EdgeInsets.all(15),
-            leading: Image.network(
+      color: cardColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      elevation: 3,
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Image.network(
               product.imagem.isNotEmpty
                   ? product.imagem
                   : 'assets/no-image.jpeg',
-              width: 50,
-              height: 50,
+              width: double.infinity,
               fit: BoxFit.cover,
-              errorBuilder:
-                  (_, __, ___) => Image.asset(
-                    'assets/no-image.jpeg',
-                    width: 50,
-                    height: 50,
-                  ),
-            ),
-            title: Text(
-              product.produto,
-              style: const TextStyle(color: Colors.black87),
-            ),
-            subtitle: Text(
-              'Código: ${product.codigo} • R\$ ${product.preco} • Estoque: ${product.estoque}',
-              style: const TextStyle(color: Colors.black87),
+              errorBuilder: (_, __, ___) => Image.asset(
+                'assets/no-image.jpeg',
+                fit: BoxFit.cover,
+              ),
             ),
           ),
-        );
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Text(
+              product.produto,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: Colors.black87,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: RichText(
+              text: TextSpan(
+                style:
+                const TextStyle(fontSize: 12, color: Colors.black87),
+                children: [
+                  TextSpan(
+                    text: 'Código: ${product.codigo} • ',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  TextSpan(
+                    text: 'R\$ ${product.preco} • ',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  TextSpan(
+                    text: 'Estoque: ${product.estoque}',
+                    style: const TextStyle(fontWeight: FontWeight.normal),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 6),
+        ],
+      ),
+    )
+        : Card(
+      color: cardColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      elevation: 6,
+      child: ListTile(
+        tileColor: cardColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        contentPadding: const EdgeInsets.all(15),
+        leading: Image.network(
+          product.imagem.isNotEmpty
+              ? product.imagem
+              : 'assets/no-image.jpeg',
+          width: 50,
+          height: 50,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => Image.asset(
+            'assets/no-image.jpeg',
+            width: 50,
+            height: 50,
+          ),
+        ),
+        title: Text(
+          product.produto,
+          style: const TextStyle(color: Colors.black87),
+        ),
+        subtitle: RichText(
+          text: TextSpan(
+            style: const TextStyle(color: Colors.black87, fontSize: 12),
+            children: [
+              TextSpan(
+                text: 'Código: ${product.codigo} • ',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              TextSpan(
+                text: 'R\$ ${product.preco} • ',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              TextSpan(
+                text: 'Estoque: ${product.estoque}',
+                style: const TextStyle(fontWeight: FontWeight.normal),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
