@@ -1,40 +1,41 @@
 import 'dart:convert';
 import 'dart:developer';
+import 'package:ecommerce/app/core/rest/http/http_rest_client.dart';
 import 'package:ecommerce/app/repositories/login/model/login_model.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-
-import '../../core/rest/rest_client.dart';
 import 'i_login_repository.dart';
 
 class LoginRepository implements ILoginRepository {
-  final RestClient _rest;
+  final HttpRestClient _restClient;
   late SharedPreferences prefs;
 
-  LoginRepository({required RestClient rest}) : _rest = rest;
+  LoginRepository({required HttpRestClient restClient})
+      : _restClient = restClient;
 
-  @override
-  Future<void> checkUrl() async {
+  Future<void> checkUrl(String cnpj) async {
     try {
       prefs = await SharedPreferences.getInstance();
 
-      var url =
-          'http://prosystem.dyndns-work.com:9090/datasnap/rest/TserverAPPnfe/LoginEmpresa/10329033000133';
-      var response = await http.get(Uri.parse(url));
+      final url =
+          'http://prosystem.dyndns-work.com:9090/datasnap/rest/TserverAPPnfe/LoginEmpresa/$cnpj';
+      final response = await http.get(Uri.parse(url));
+      final jsonData = jsonDecode(response.body);
 
-      var jsonData = jsonDecode(response.body);
-      print("Json > ${jsonData}");
+      log("Rona Json > $jsonData");
 
-      await prefs.setString(
-        'host',
-        jsonData[0]['SERVIDOR'].toString().toLowerCase(),
-      );
-      await prefs.setString(
-        'port',
-        jsonData[0]['PORTA'].toString().toLowerCase(),
-      );
+      if (jsonData.isNotEmpty) {
+        final host = jsonData[0]['SERVIDOR'].toString().toLowerCase();
+        final port = jsonData[0]['PORTA'].toString().toLowerCase();
+
+        await prefs.setString('host', host);
+        await prefs.setString('port', port);
+
+        await _restClient.setBaseUrl(host, port);
+      }
     } catch (e) {
-      log(e.toString());
+      log("Erro checkUrl: $e");
+      rethrow;
     }
   }
 
@@ -46,20 +47,28 @@ class LoginRepository implements ILoginRepository {
       login = login.toUpperCase();
       password = password.toUpperCase();
 
-      var path = '/datasnap/rest/TServerAPPecf/LoginApp/$login/$password';
-      var response = await _rest.get(path);
+      final path = '/datasnap/rest/TServerAPPecf/LoginApp/$login/$password';
+      final response = await _restClient.get(path);
+      final jsonData = response.data;
 
-      var jsonData = response.data;
-      print("Json > ${jsonData}");
+      log("Login Json > $jsonData");
 
-      var res = await LoginModel.fromJson(jsonData[0]);
+      if (jsonData == null || jsonData.isEmpty) {
+        return LoginModel();
+      }
+
+      final res = LoginModel.fromJson(jsonData[0]);
 
       if (res.validado == "T") {
         await prefs.setString('userLogin', login);
         await prefs.setString('userCodigo', res.codigo ?? '');
         await prefs.setString('companyCodigo', res.empresa ?? '');
         await prefs.setString('userFantasia', res.fantasia ?? 'Nome pendente');
-        await prefs.setString('userEmail', res.email?.isNotEmpty == true ? res.email! : 'Email pendente');
+        await prefs.setString(
+          'userEmail',
+          res.email?.isNotEmpty == true ? res.email! : 'Email pendente',
+        );
+
         if (res.imagem64 != null && res.imagem64!.isNotEmpty) {
           await prefs.setString('userImagem64', res.imagem64!);
         }
@@ -67,7 +76,7 @@ class LoginRepository implements ILoginRepository {
 
       return res;
     } catch (e) {
-      log(e.toString());
+      log("Erro login: $e");
       return LoginModel();
     }
   }
@@ -80,5 +89,7 @@ class LoginRepository implements ILoginRepository {
     await prefs.remove('userFantasia');
     await prefs.remove('userEmail');
     await prefs.remove('userImagem64');
+    await prefs.remove('host');
+    await prefs.remove('port');
   }
 }

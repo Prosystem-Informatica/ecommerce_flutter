@@ -1,22 +1,23 @@
 import 'package:bloc/bloc.dart';
-
 import '../../../repositories/login/login_repository.dart';
 import 'login_bloc_state.dart';
 
 class LoginBlocCubit extends Cubit<LoginBlocState> {
   final LoginRepository loginRepository;
-  LoginBlocCubit({required this.loginRepository})
-    : super(LoginBlocState.initial());
 
-  Future<void> checkUrl() async {
+  LoginBlocCubit({required this.loginRepository})
+      : super(LoginBlocState.initial());
+
+  Future<void> checkUrl(String cnpj) async {
     try {
       emit(state.copyWith(status: LoginStateStatus.loading));
-      final loginValidation = await loginRepository.checkUrl();
-    } on Exception {
+      await loginRepository.checkUrl(cnpj);
+      emit(state.copyWith(status: LoginStateStatus.initial));
+    } on Exception catch (e) {
       emit(
         state.copyWith(
           status: LoginStateStatus.error,
-          errorMessage: "Erro ao efetuar Login",
+          errorMessage: "Erro ao buscar host e porta: $e",
         ),
       );
     }
@@ -26,7 +27,8 @@ class LoginBlocCubit extends Cubit<LoginBlocState> {
     try {
       emit(state.copyWith(status: LoginStateStatus.loading));
       final loginValidation = await loginRepository.login(login, password);
-      if (loginValidation.validado == 'T' && login != "" && password != "") {
+
+      if (loginValidation.validado == 'T' && login.isNotEmpty && password.isNotEmpty) {
         emit(state.copyWith(status: LoginStateStatus.success));
       } else {
         emit(
@@ -36,11 +38,11 @@ class LoginBlocCubit extends Cubit<LoginBlocState> {
           ),
         );
       }
-    } on Exception {
+    } on Exception catch (e) {
       emit(
         state.copyWith(
           status: LoginStateStatus.error,
-          errorMessage: "Erro ao efetuar Login",
+          errorMessage: "Erro ao efetuar login: $e",
         ),
       );
     }

@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../../core/ui/helpers/messages.dart';
 import '../../core/ui/widget/input_widget.dart';
 import 'cubit/login_bloc_cubit.dart';
@@ -16,13 +15,23 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> with Messages<LoginPage> {
+  final TextEditingController cnpjController = TextEditingController();
   final TextEditingController loginController = TextEditingController();
   final TextEditingController senhaController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _checkApplication();
+    cnpjController.addListener(() {
+      final text = cnpjController.text;
+      final filtered = text.replaceAll(RegExp(r'[^0-9]'), '');
+      if (text != filtered) {
+        cnpjController.value = cnpjController.value.copyWith(
+          text: filtered,
+          selection: TextSelection.collapsed(offset: filtered.length),
+        );
+      }
+    });
   }
 
   @override
@@ -36,6 +45,7 @@ class _LoginPageState extends State<LoginPage> with Messages<LoginPage> {
             showSuccess("Login efetuado com sucesso");
 
             final prefs = await SharedPreferences.getInstance();
+            await prefs.setString("cnpj", cnpjController.text);
             await prefs.setString("user", loginController.text);
             await prefs.setString("token", "123456");
 
@@ -69,7 +79,18 @@ class _LoginPageState extends State<LoginPage> with Messages<LoginPage> {
                       children: [
                         Image.asset("assets/logo-pro.png"),
                         const SizedBox(height: 10),
-                        buildInput('Login*', controller: loginController),
+
+                        buildInput(
+                          'CNPJ*',
+                          controller: cnpjController,
+                        ),
+
+                        const SizedBox(height: 10),
+
+                        buildInput(
+                          'Login*',
+                          controller: loginController,
+                        ),
                         const SizedBox(height: 10),
                         buildInput(
                           'Senha*',
@@ -77,6 +98,7 @@ class _LoginPageState extends State<LoginPage> with Messages<LoginPage> {
                           controller: senhaController,
                         ),
                         const SizedBox(height: 20),
+
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
@@ -85,7 +107,16 @@ class _LoginPageState extends State<LoginPage> with Messages<LoginPage> {
                               padding: const EdgeInsets.symmetric(vertical: 16),
                             ),
                             onPressed: () async {
-                              await context.read<LoginBlocCubit>().login(
+                              if (cnpjController.text.isEmpty) {
+                                showError("Digite o CNPJ");
+                                return;
+                              }
+
+                              final cubit = context.read<LoginBlocCubit>();
+
+                              await cubit.checkUrl(cnpjController.text);
+
+                              await cubit.login(
                                 loginController.text,
                                 senhaController.text,
                               );
@@ -96,9 +127,10 @@ class _LoginPageState extends State<LoginPage> with Messages<LoginPage> {
                             ),
                           ),
                         ),
+
                         const SizedBox(height: 20),
                         Text(
-                          "Versão • 1.0.0",
+                          "Versão • 2.0.0",
                           style: TextStyle(color: colorScheme.surface),
                         ),
                       ],
@@ -111,9 +143,5 @@ class _LoginPageState extends State<LoginPage> with Messages<LoginPage> {
         );
       },
     );
-  }
-
-  void _checkApplication() async {
-    await context.read<LoginBlocCubit>().checkUrl();
   }
 }

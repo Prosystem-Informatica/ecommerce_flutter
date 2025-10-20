@@ -28,7 +28,7 @@ class BlocInjection extends StatefulWidget {
 }
 
 class _BlocInjectionState extends State<BlocInjection> {
-  final RestClient _apiRestClient = HttpRestClient(
+  final HttpRestClient _apiRestClient = HttpRestClient(
     baseUrl: Environments.get('BASE_URL') ?? "",
   );
 
@@ -47,11 +47,7 @@ class _BlocInjectionState extends State<BlocInjection> {
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
           return const MaterialApp(
-            home: Scaffold(
-              body: Center(
-                child: CircularProgressIndicator(),
-              ),
-            ),
+            home: Scaffold(body: Center(child: CircularProgressIndicator())),
           );
         }
 
@@ -59,7 +55,9 @@ class _BlocInjectionState extends State<BlocInjection> {
           return MaterialApp(
             home: Scaffold(
               body: Center(
-                child: Text('Erro ao inicializar dependências: ${snapshot.error}'),
+                child: Text(
+                  'Erro ao inicializar dependências: ${snapshot.error}',
+                ),
               ),
             ),
           );
@@ -70,35 +68,44 @@ class _BlocInjectionState extends State<BlocInjection> {
         return MultiBlocProvider(
           providers: [
             BlocProvider<LoginBlocCubit>(
-              create: (_) => LoginBlocCubit(
-                loginRepository: LoginRepository(rest: _apiRestClient),
-              ),
+              create:
+                  (_) => LoginBlocCubit(
+                    loginRepository: LoginRepository(
+                      restClient: _apiRestClient,
+                    ),
+                  ),
             ),
             BlocProvider<OrderBlocCubit>(
-              create: (_) => OrderBlocCubit(
-                orderRepository: OrderRepository(rest: _apiRestClient),
-              ),
+              create:
+                  (_) => OrderBlocCubit(
+                    orderRepository: OrderRepository(rest: _apiRestClient),
+                  ),
             ),
             BlocProvider<CustomerBlocCubit>(
-              create: (_) =>
-              CustomerBlocCubit(customerRepository: CustomerRepository())
-                ..fetchCustomers(),
+              create:
+                  (_) => CustomerBlocCubit(
+                    customerRepository: CustomerRepository(),
+                  )..fetchCustomers(),
             ),
             BlocProvider<ConsultProductBlocCubit>(
-              create: (_) => ConsultProductBlocCubit(
-                productRepository: ConsultProductRepository(),
-              )..fetchProducts(),
+              create:
+                  (_) => ConsultProductBlocCubit(
+                    productRepository: ConsultProductRepository(),
+                  )..fetchProducts(),
             ),
             BlocProvider<CommissionBlocCubit>(
-              create: (_) => CommissionBlocCubit(repository: CommissionRepository()),
+              create:
+                  (_) =>
+                      CommissionBlocCubit(repository: CommissionRepository()),
             ),
             BlocProvider<FinishCartCubit>(
-              create: (_) => FinishCartCubit(
-                paymentRepository: PaymentRepository(),
-                customerRepository: CustomerRepository(),
-                finishCartRepository: FinishCartRepository(),
-                prefs: prefs,
-              ),
+              create:
+                  (_) => FinishCartCubit(
+                    paymentRepository: PaymentRepository(),
+                    customerRepository: CustomerRepository(),
+                    finishCartRepository: FinishCartRepository(),
+                    prefs: prefs,
+                  ),
             ),
           ],
           child: const AppWidget(),
