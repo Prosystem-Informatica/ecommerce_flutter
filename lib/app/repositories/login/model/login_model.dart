@@ -2,6 +2,7 @@ class LoginModel {
   String? codigo;
   String? validado;
   String? empresa;
+  String? restaurante;
   String? frete;
   String? valKm;
   String? valMinKm;
@@ -9,10 +10,13 @@ class LoginModel {
   String? email;
   String? imagem64;
 
+  bool get isRestaurante => restaurante?.toUpperCase() == 'SIM';
+
   LoginModel({
     this.codigo,
     this.validado,
     this.empresa,
+    this.restaurante,
     this.frete,
     this.valKm,
     this.valMinKm,
@@ -26,6 +30,7 @@ class LoginModel {
       codigo: json['CODIGO'],
       validado: json['VALIDADO'],
       empresa: json['EMPRESA'],
+      restaurante: json['RESTAURANTE'],
       frete: json['FRETE'],
       valKm: json['VALKM'],
       valMinKm: json['VALMINKM'],
@@ -40,6 +45,7 @@ class LoginModel {
       'codigo': codigo,
       'validado': validado,
       'empresa': empresa,
+      'restaurante': restaurante,
       'frete': frete,
       'valKm': valKm,
       'valMinKm': valMinKm,

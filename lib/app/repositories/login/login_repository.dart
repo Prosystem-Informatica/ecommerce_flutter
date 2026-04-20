@@ -11,7 +11,7 @@ class LoginRepository implements ILoginRepository {
   late SharedPreferences prefs;
 
   LoginRepository({required HttpRestClient restClient})
-      : _restClient = restClient;
+    : _restClient = restClient;
 
   Future<void> checkUrl(String cnpj) async {
     try {
@@ -35,9 +35,7 @@ class LoginRepository implements ILoginRepository {
         await prefs.setString('port', port);
 
         await _restClient.setBaseUrl(host, port);
-
-      } else {
-      }
+      } else {}
     } catch (e) {
       rethrow;
     }
@@ -54,12 +52,9 @@ class LoginRepository implements ILoginRepository {
       final host = prefs.getString('host');
       final port = prefs.getString('port');
 
-
       final path = '/datasnap/rest/TServerAPPecf/LoginApp/$login/$password';
       final response = await _restClient.get(path);
       final jsonData = response.data;
-
-      log("Login Json > $jsonData");
 
       if (jsonData == null || jsonData.isEmpty) {
         return LoginModel();
@@ -76,6 +71,7 @@ class LoginRepository implements ILoginRepository {
           'userEmail',
           res.email?.isNotEmpty == true ? res.email! : 'Email pendente',
         );
+        await prefs.setString('isRestaurante', res.restaurante ?? 'NAO');
 
         if (res.imagem64 != null && res.imagem64!.isNotEmpty) {
           await prefs.setString('userImagem64', res.imagem64!);
@@ -97,6 +93,7 @@ class LoginRepository implements ILoginRepository {
     await prefs.remove('userFantasia');
     await prefs.remove('userEmail');
     await prefs.remove('userImagem64');
+    await prefs.remove('isRestaurante');
     await prefs.remove('host');
     await prefs.remove('port');
   }

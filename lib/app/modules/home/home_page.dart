@@ -1,3 +1,4 @@
+import 'package:ecommerce/app/modules/home/modules/comanda/comanda_page.dart';
 import 'package:ecommerce/app/modules/profile/modules/orders_finish/orders_finish_page.dart';
 import 'package:ecommerce/app/modules/profile/modules/orders_open/orders_open_page.dart';
 import 'package:ecommerce/app/modules/profile/modules/orders_wait/orders_local_page.dart';
@@ -118,13 +119,46 @@ class _HomePageState extends State<HomePage> {
 }
 
 class _DashboardState extends State<Dashboard> {
-  final tabs = ["Pedidos Offline", "Pre Pedidos", "Pedidos"];
+  bool _isRestaurante = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRestauranteFlag();
+  }
+
+  Future<void> _loadRestauranteFlag() async {
+    final prefs = await SharedPreferences.getInstance();
+    final value = prefs.getString('isRestaurante') ?? 'NAO';
+    if (mounted) {
+      setState(() {
+        _isRestaurante = value.toUpperCase() == 'SIM';
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
+    final tabs = _isRestaurante
+        ? [const Tab(text: 'Comanda')]
+        : [
+            const Tab(text: 'Pedidos Offline'),
+            const Tab(text: 'Pre Pedidos'),
+            const Tab(text: 'Pedidos'),
+          ];
+
+    final tabViews = _isRestaurante
+        ? [const ComandaPage()]
+        : [
+            const LocalOrdersPage(),
+            const OrdersOpenPage(),
+            const OrdersFinishPage(),
+          ];
+
     return DefaultTabController(
+      key: ValueKey(_isRestaurante),
       length: tabs.length,
       child: Scaffold(
         backgroundColor: Colors.transparent,
@@ -147,19 +181,13 @@ class _DashboardState extends State<Dashboard> {
                     labelColor: colorScheme.onPrimary,
                     unselectedLabelColor: Colors.grey[800],
                     dividerColor: Colors.transparent,
-                    tabs: tabs.map((title) => Tab(text: title)).toList(),
+                    tabs: tabs,
                   ),
                 ),
               ),
               const SizedBox(height: 16),
-              const Expanded(
-                child: TabBarView(
-                  children: [
-                    LocalOrdersPage(),
-                    OrdersOpenPage(),
-                    OrdersFinishPage(),
-                  ],
-                ),
+              Expanded(
+                child: TabBarView(children: tabViews),
               ),
             ],
           ),

@@ -287,5 +287,6 @@ extension ProdutoHelpers on ConsultProductModel {
     estoque: estoque,
     imagem: imagem,
     quantidade: quantidadePositiva,
+    obs: obs,
   );
 }

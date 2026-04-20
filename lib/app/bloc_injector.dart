@@ -1,4 +1,6 @@
 import 'package:ecommerce/app/modules/home/modules/cart/cubit/order/order_bloc_cubit.dart';
+import 'package:ecommerce/app/modules/home/modules/comanda/cubit/comanda_cubit.dart';
+import 'package:ecommerce/app/repositories/comanda/comanda_repository.dart';
 import 'package:ecommerce/app/repositories/commission/commission_repository.dart';
 import 'package:ecommerce/app/repositories/customer/customer_repository.dart';
 import 'package:ecommerce/app/repositories/finishCard/finish_cart_repository.dart';
@@ -105,6 +107,11 @@ class _BlocInjectionState extends State<BlocInjection> {
                     finishCartRepository: FinishCartRepository(),
                     prefs: prefs,
                   ),
+            ),
+            BlocProvider<ComandaCubit>(
+              create: (_) => ComandaCubit(
+                repository: ComandaRepository(rest: _apiRestClient),
+              ),
             ),
           ],
           child: const AppWidget(),

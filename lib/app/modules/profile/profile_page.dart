@@ -50,6 +50,7 @@ class _ProfilePageState extends State<ProfilePage> {
     await prefs.remove('userFantasia');
     await prefs.remove('userEmail');
     await prefs.remove('userImagem64');
+    await prefs.remove('isRestaurante');
     await prefs.remove('host');
     await prefs.remove('port');
     await prefs.remove('tabelaPreco');
@@ -103,25 +104,29 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     ),
                     const SizedBox(width: 16),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          nome,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            nome,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          email,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[800],
+                          const SizedBox(height: 4),
+                          Text(
+                            email,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[800],
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ],
                 ),

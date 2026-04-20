@@ -13,12 +13,15 @@ import 'cubit/finishCard/finish_bloc_cubit.dart';
 class CartItem {
   final ConsultProductModel product;
   int quantity;
+  String obs;
 
-  CartItem({required this.product, this.quantity = 0});
+  CartItem({required this.product, this.quantity = 0, this.obs = ''});
 }
 
 class ProductListPage extends StatefulWidget {
-  const ProductListPage({super.key});
+  final bool isRestaurante;
+
+  const ProductListPage({super.key, this.isRestaurante = false});
 
   @override
   State<ProductListPage> createState() => _ProductListPageState();
@@ -79,13 +82,18 @@ class _ProductListPageState extends State<ProductListPage> {
     }
   }
 
-  void addToCartWithQuantity(ConsultProductModel product, int quantity) {
+  void addToCartWithQuantity(ConsultProductModel product, int quantity,
+      {String obs = ''}) {
     final index =
-    cart.indexWhere((item) => item.product.codigo == product.codigo);
+        cart.indexWhere((item) => item.product.codigo == product.codigo);
     if (index >= 0) {
-      setState(() => cart[index].quantity += quantity);
+      setState(() {
+        cart[index].quantity += quantity;
+        cart[index].obs = obs;
+      });
     } else {
-      setState(() => cart.add(CartItem(product: product, quantity: quantity)));
+      setState(() =>
+          cart.add(CartItem(product: product, quantity: quantity, obs: obs)));
     }
   }
 
@@ -290,7 +298,9 @@ class _ProductListPageState extends State<ProductListPage> {
                         onPressed: () {
                           final productsToAdd = cart
                               .map((e) => e.product.copyWith(
-                              quantidade: e.quantity))
+                                    quantidade: e.quantity,
+                                    obs: e.obs,
+                                  ))
                               .toList();
                           cubit.setProdutos(productsToAdd);
                           Navigator.pop(context, productsToAdd);
@@ -330,9 +340,10 @@ class _ProductListPageState extends State<ProductListPage> {
     double preco = double.tryParse(product.preco.replaceAll(',', '.')) ?? 0.0;
 
     final TextEditingController quantityController =
-    TextEditingController(text: quantity.toString());
+        TextEditingController(text: quantity.toString());
     final TextEditingController precoController =
-    TextEditingController(text: product.preco);
+        TextEditingController(text: product.preco);
+    final TextEditingController obsController = TextEditingController();
 
     showModalBottomSheet(
       context: context,
@@ -503,6 +514,23 @@ class _ProductListPageState extends State<ProductListPage> {
                       style: const TextStyle(
                           fontSize: 16, fontWeight: FontWeight.bold),
                     ),
+                    if (widget.isRestaurante) ...[
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: obsController,
+                        maxLines: 2,
+                        textCapitalization: TextCapitalization.sentences,
+                        decoration: InputDecoration(
+                          labelText: 'Observação',
+                          hintText: 'Ex: sem cebola, bem passado...',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 10),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 20),
                     SizedBox(
                       width: double.infinity,
@@ -511,7 +539,11 @@ class _ProductListPageState extends State<ProductListPage> {
                           final updatedProduct = product.copyWith(
                             preco: preco.toStringAsFixed(2).replaceAll('.', ','),
                           );
-                          addToCartWithQuantity(updatedProduct, quantity);
+                          addToCartWithQuantity(
+                            updatedProduct,
+                            quantity,
+                            obs: obsController.text.trim(),
+                          );
                           Navigator.pop(context);
                         },
                         style: ElevatedButton.styleFrom(

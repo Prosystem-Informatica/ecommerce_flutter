@@ -5,6 +5,7 @@ class ConsultProductModel {
   final String estoque;
   final String imagem;
   int quantidade;
+  String obs;
 
   ConsultProductModel({
     required this.codigo,
@@ -13,6 +14,7 @@ class ConsultProductModel {
     required this.estoque,
     required this.imagem,
     this.quantidade = 0,
+    this.obs = '',
   });
 
   factory ConsultProductModel.fromJson(Map<String, dynamic> json) {
